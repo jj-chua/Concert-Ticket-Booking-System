@@ -1,12 +1,12 @@
 # ECHO LIVE concert ticket marketplace
 
-A responsive, framework-free ticket marketplace prototype built with HTML, CSS, and vanilla JavaScript. The page includes official event artwork, a clickable venue map, ticket cards, filters, checkout, booking lookup, and cancellation.
+A responsive, framework-free ticket marketplace prototype built with HTML, CSS, and vanilla JavaScript. The page includes official Genting event artwork, animated plum wave accents, a clickable Arena of Stars zone diagram, ticket cards, filters, checkout, booking lookup, and cancellation.
 
 ## Run
 
 Open `index.html` in a browser. No build step is required. Demo bookings are stored in browser `localStorage`.
 
-Upcoming Kuala Lumpur event dates, status labels, and artwork link to Live Nation Malaysia. Ticket prices and inventory in the listings are sample UI data, not live offers.
+Upcoming Arena of Stars event dates and artwork link to Resorts World Genting. The seating zones are an illustrative diagram based on the venue's ticket categories; they are not a live seat map or to scale. Ticket prices and inventory in the listings are sample UI data, not live offers.
 
 ## Connect a backend
 
