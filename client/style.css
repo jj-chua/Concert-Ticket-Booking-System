@@ -51,3 +51,47 @@ body.map-open{overflow:hidden}
 .no-events{grid-column:1/-1;padding:22px;border-radius:7px;background:#fff;color:#726b7a;text-align:center}
 .event-card[hidden]{display:none}
 @media(max-width:760px){.map-card-expanded{width:calc(100vw - 20px);max-height:calc(100vh - 20px);padding:16px 13px}.map-card-expanded .arena-map{max-height:68vh;overflow:auto}.map-card-expanded .arena-map-svg{max-height:none}.map-card-expanded .map-legend{gap:8px}}
+/* Roomier layout, larger event artwork, and tighter content spacing */
+@media(min-width:761px){
+  .event-hero{min-height:455px}
+  .hero-inner{max-width:1360px;min-height:412px;padding:48px 32px 38px;gap:42px}
+  .hero-event-copy{max-width:760px}
+  .hero-poster-wrap{width:245px}
+  .hero-poster{height:330px}
+  .discovery,.market-section{max-width:1360px;padding-left:28px;padding-right:28px}
+  .discovery,.market-section{padding-top:30px}
+  .discovery-head{margin-bottom:14px}
+  .discovery-head h2,.market-heading h2{font-size:34px}
+  .discovery-head p,.market-heading p{font-size:14px}
+  .event-strip{gap:16px}
+  .event-card-poster{height:184px}
+  .event-card-info{padding:13px 14px 15px}
+  .event-card-info h3{font-size:17px}
+  .event-card-info p{font-size:11px}
+  .market-section{padding-top:36px;padding-bottom:58px}
+}
+@media(max-width:1030px) and (min-width:761px){
+  .hero-inner{max-width:100%;padding-left:27px;padding-right:27px}
+  .hero-poster-wrap{width:205px}
+  .hero-poster{height:276px}
+  .discovery,.market-section{padding-left:24px;padding-right:24px}
+  .event-card-poster{height:160px}
+}
+@media(max-width:760px){
+  .hero-inner{min-height:350px;padding:31px 18px 38px;gap:12px}
+  .hero-event-copy{max-width:calc(100% - 132px)}
+  .hero-poster-wrap{width:128px}
+  .hero-poster{height:178px}
+  .hero-poster-wrap>span{font-size:6px}
+  .discovery,.market-section{padding-left:16px;padding-right:16px}
+  .discovery{padding-top:22px}
+  .discovery-head{margin-bottom:12px;gap:8px}
+  .discovery-head h2,.market-heading h2{font-size:25px}
+  .discovery-head p,.market-heading p{font-size:11px}
+  .event-strip{gap:10px}
+  .event-strip .event-card{width:170px}
+  .event-card-poster{height:142px}
+  .event-card-info{padding:10px 11px 12px}
+  .event-card-info h3{font-size:15px}
+  .market-section{padding-top:25px;padding-bottom:38px}
+}
