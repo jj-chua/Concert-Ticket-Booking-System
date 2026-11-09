@@ -1,6 +1,6 @@
 # ECHO LIVE concert ticket marketplace
 
-A responsive, framework-free ticket marketplace prototype built with HTML, CSS, and vanilla JavaScript. The page includes official Genting event artwork, animated plum wave accents, a clickable Arena of Stars zone diagram, ticket cards, filters, checkout, booking lookup, and cancellation.
+A responsive, framework-free ticket marketplace prototype built with HTML, CSS, and vanilla JavaScript. The page includes official Genting event artwork, static plum wave accents, a clickable Arena of Stars zone diagram, ticket cards, filters, checkout, booking lookup, and cancellation.
 
 ## Run
 
