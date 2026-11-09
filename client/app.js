@@ -68,10 +68,42 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const money = value => `RM ${Number(value || 0).toFixed(2)}`;
 const uuid = () => window.crypto?.randomUUID?.() || "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => { const n = Math.random() * 16 | 0; return (c === "x" ? n : (n & 3 | 8)).toString(16); });
-const state = { page: "home", step: 1, events: EVENTS, eventId: "priscilla-abby-genting-2026", section: "All sections", classFilter: "all", quantity: 2, sort: "recommended", minPrice: 0, maxPrice: 2000, listing: null, key: "", name: "", email: "", receipt: null, bookingId: "", booking: null, lookupBusy: false, cancelBusy: false, refreshing: false, toast: "", searchTerm: "", searchOpen: false, locationFilter: "all", locationOpen: false, mapExpanded: false };
+const state = { page: "home", pageHistory: ["home"], sellDraft: null, step: 1, events: EVENTS, eventId: "priscilla-abby-genting-2026", section: "All sections", classFilter: "all", quantity: 2, sort: "recommended", minPrice: 0, maxPrice: 2000, listing: null, key: "", name: "", email: "", receipt: null, bookingId: "", booking: null, lookupBusy: false, cancelBusy: false, refreshing: false, toast: "", searchTerm: "", searchOpen: false, locationFilter: "all", locationOpen: false, mapExpanded: false };
 const root = $("#root");
 const currentEvent = () => state.events.find(item => item.id === state.eventId) || EVENTS[0];
 const selectedCount = () => Number(state.quantity || 2);
+function captureSellDraft() {
+  const form = $("#sell-form", root);
+  if (form) state.sellDraft = Object.fromEntries(new FormData(form).entries());
+}
+function navigateToPage(page) {
+  if (state.page === "sell") captureSellDraft();
+  if (state.page !== page) state.pageHistory.push(page);
+  state.page = page;
+  render();
+}
+function returnToPreviousPage() {
+  if (state.page === "sell") captureSellDraft();
+  if (state.pageHistory.length > 1) state.pageHistory.pop();
+  state.page = state.pageHistory.at(-1) || "home";
+  if (state.page === "home") state.sellDraft = null;
+  state.mapExpanded = false;
+  render();
+}
+function resetPageHistory(page = "home") {
+  state.page = page;
+  state.pageHistory = [page];
+}
+function backPageLabel() {
+  const previousPage = state.pageHistory.at(-2);
+  if (previousPage === "account") return "Back to profile";
+  if (previousPage === "sell") return "Back to sell tickets";
+  return "Back to concerts";
+}
+function backButton() {
+  const label = esc(backPageLabel());
+  return `<button class="text-back back-icon-button" data-action="go-back" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5m7 7-7-7 7-7"/></svg></button>`;
+}
 const getBookings = () => { try { return JSON.parse(localStorage.getItem("echo-ticket-orders") || "[]"); } catch { return []; } };
 const getSellerListings = () => { try { return JSON.parse(localStorage.getItem("echo-seller-listings") || "[]"); } catch { return []; } };
 const saveSellerListings = listings => { try { localStorage.setItem("echo-seller-listings", JSON.stringify(listings)); return true; } catch { state.toast = "Could not save this listing on this device."; return false; } };
@@ -252,11 +284,13 @@ function bookingView() {
 function sellView() {
   const profile = getMemberProfile();
   const sellableShows = state.events.filter(event => event.resaleAllowed !== false);
-  const selectedShow = sellableShows.find(event => event.id === state.eventId) || sellableShows[0] || currentEvent();
+  const selectedShow = sellableShows.find(event => event.id === (state.sellDraft?.eventId || state.eventId)) || sellableShows[0] || currentEvent();
   const events = sellableShows.map(event => `<option value="${esc(event.id)}" ${event.id === selectedShow.id ? "selected" : ""}>${esc(event.name)} · ${esc(event.date)}</option>`).join("");
-  const sections = selectedShow.sections.map(section => `<option value="${esc(section)}">${esc(section)}</option>`).join("");
-  const rows = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(row => `<option>${row}</option>`).join("");
-  return `<section class="sell-page"><button class="text-back" data-action="go-home">← Back to concerts</button><div class="page-heading"><span class="section-kicker">SELL ON ECHO LIVE</span><h1>Make someone’s night.</h1><p>List your tickets for ${esc(selectedShow.venue)}.</p></div><div class="sell-layout"><form id="sell-form" class="sell-form"><div class="form-section-title"><span>01</span><div><h2>Ticket details</h2><p>Tell fans what you’re selling.</p></div></div><label>Concert<select name="eventId" data-change="sell-event" required>${events}</select></label><div class="form-fields-two"><label>Section<select name="section" required>${sections}</select></label><label>Row<select name="row" required>${rows}</select></label></div><div class="form-fields-two"><label>Seat numbers<input name="seats" required maxlength="30" placeholder="e.g. 5–6" autocomplete="off"></label><label>Quantity<input name="quantity" type="number" min="1" max="6" step="1" value="2" required></label></div><label>Price per ticket (RM)<input name="price" type="number" min="1" max="2000" step="1" placeholder="e.g. 350" required></label><div class="form-section-title seller-contact-title"><span>02</span><div><h2>Seller contact</h2><p>Buyers won’t see your details on the listing.</p></div></div><label>Your name<input name="sellerName" value="${esc(profile.name)}" maxlength="80" required autocomplete="name"></label><label>Email address<input name="sellerEmail" type="email" value="${esc(profile.email)}" maxlength="120" required autocomplete="email" placeholder="you@example.com"></label><div class="local-save-note"><span>✓</span><p><strong>Instant demo listing</strong><br>Your ticket will appear in the marketplace and be saved on this device.</p></div><button class="primary-btn publish-button" type="submit">Publish tickets</button></form><aside class="sell-side-card"><span class="section-kicker">HOW IT WORKS</span><h2>List in a few steps.</h2><ol><li><span>1</span><div><strong>Add your seat details</strong><small>Choose the concert, section, row and seats.</small></div></li><li><span>2</span><div><strong>Set your asking price</strong><small>Enter a price for each ticket.</small></div></li><li><span>3</span><div><strong>Publish to the marketplace</strong><small>Your offer becomes available to fans right away.</small></div></li></ol><p class="sell-side-footnote">Demo listings stay in this browser’s local storage.</p></aside></div></section>`;
+  const draft = state.sellDraft || {};
+  const selectedSection = selectedShow.sections.includes(draft.section) ? draft.section : selectedShow.sections[0];
+  const sections = selectedShow.sections.map(section => `<option value="${esc(section)}" ${section === selectedSection ? "selected" : ""}>${esc(section)}</option>`).join("");
+  const rows = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(row => `<option ${row === draft.row ? "selected" : ""}>${row}</option>`).join("");
+  return `<section class="sell-page">${backButton()}<div class="page-heading"><span class="section-kicker">SELL ON ECHO LIVE</span><h1>Make someone’s night.</h1><p>List your tickets for ${esc(selectedShow.venue)}.</p></div><div class="sell-layout"><form id="sell-form" class="sell-form"><div class="form-section-title"><span>01</span><div><h2>Ticket details</h2><p>Tell fans what you’re selling.</p></div></div><label>Concert<select name="eventId" data-change="sell-event" required>${events}</select></label><div class="form-fields-two"><label>Section<select name="section" required>${sections}</select></label><label>Row<select name="row" required>${rows}</select></label></div><div class="form-fields-two"><label>Seat numbers<input name="seats" value="${esc(draft.seats || "")}" required maxlength="30" placeholder="e.g. 5–6" autocomplete="off"></label><label>Quantity<input name="quantity" type="number" min="1" max="6" step="1" value="${esc(draft.quantity || "2")}" required></label></div><label>Price per ticket (RM)<input name="price" type="number" min="1" max="2000" step="1" value="${esc(draft.price || "")}" placeholder="e.g. 350" required></label><div class="form-section-title seller-contact-title"><span>02</span><div><h2>Seller contact</h2><p>Buyers won’t see your details on the listing.</p></div></div><label>Your name<input name="sellerName" value="${esc(draft.sellerName || profile.name)}" maxlength="80" required autocomplete="name"></label><label>Email address<input name="sellerEmail" type="email" value="${esc(draft.sellerEmail || profile.email)}" maxlength="120" required autocomplete="email" placeholder="you@example.com"></label><div class="local-save-note"><span>✓</span><p><strong>Instant demo listing</strong><br>Your ticket will appear in the marketplace and be saved on this device.</p></div><button class="primary-btn publish-button" type="submit">Publish tickets</button></form><aside class="sell-side-card"><span class="section-kicker">HOW IT WORKS</span><h2>List in a few steps.</h2><ol><li><span>1</span><div><strong>Add your seat details</strong><small>Choose the concert, section, row and seats.</small></div></li><li><span>2</span><div><strong>Set your asking price</strong><small>Enter a price for each ticket.</small></div></li><li><span>3</span><div><strong>Publish to the marketplace</strong><small>Your offer becomes available to fans right away.</small></div></li></ol><p class="sell-side-footnote">Demo listings stay in this browser’s local storage.</p></aside></div></section>`;
 }
 
 function accountView() {
@@ -267,7 +301,7 @@ function accountView() {
   const memberSince = new Date(profile.joinedAt || Date.now()).toLocaleDateString("en-MY", { month: "short", year: "numeric" });
   const bookingRows = bookings.length ? bookings.slice(0, 5).map(booking => `<article class="account-data-row"><div><strong>${esc(booking.eventName || booking.event || "Live event")}</strong><small>${esc(booking.date || "Date pending")} · ${esc(booking.section || "Tickets")} · ${Number(booking.quantity || 0)} ticket(s)</small></div><span class="booking-status ${["cancelled", "canceled"].includes(String(booking.status).toLowerCase()) ? "cancelled" : ""}">${esc(String(booking.status || "confirmed").toUpperCase())}</span><button class="account-inline-action" data-action="open-account-booking" data-id="${esc(booking.id || booking.bookingId || "")}">Details</button></article>`).join("") : `<div class="account-empty">No bookings yet. Your ticket purchases will appear here.</div>`;
   const listingRows = listings.length ? listings.map(listing => { const event = state.events.find(item => item.id === listing.eventId); return `<article class="account-data-row"><div><strong>${esc(event?.name || listing.eventName || "Live event")}</strong><small>${esc(listing.section)} · Row ${esc(listing.row)} · ${esc(listing.seats)} · ${Number(listing.qty)} available</small></div><strong class="account-listing-price">${money(listing.price)} <small>each</small></strong><button class="account-inline-action remove-listing-action" data-action="remove-listing" data-id="${esc(listing.id)}">Remove</button></article>`; }).join("") : `<div class="account-empty">No active listings. Use Sell to offer tickets to other fans.</div>`;
-  return `<section class="account-page"><button class="text-back" data-action="go-home">← Back to concerts</button><div class="page-heading"><span class="section-kicker">YOUR ECHO LIVE ACCOUNT</span><h1>Profile &amp; activity</h1><p>Keep your contact details and ticket activity together.</p></div><div class="account-grid"><article class="profile-card"><div class="profile-identity"><div class="profile-avatar">${esc(initials || "EL")}</div><div><span class="section-kicker">LOCAL DEMO PROFILE</span><h2>${esc(profile.name || "Echo Live Member")}</h2><p>Member since ${esc(memberSince)}</p></div></div><form id="profile-form" class="profile-form"><label>Full name<input name="profileName" value="${esc(profile.name || "")}" maxlength="80" required autocomplete="name"></label><label>Email address<input name="profileEmail" type="email" value="${esc(profile.email || "")}" maxlength="120" autocomplete="email" placeholder="Add your email"></label><label>Phone number<input name="profilePhone" type="tel" value="${esc(profile.phone || "")}" maxlength="30" autocomplete="tel" placeholder="Add your phone number"></label><label>Region<input name="profileRegion" value="${esc(profile.region || "Malaysia")}" maxlength="60" autocomplete="country-name"></label><button class="primary-btn" type="submit">Save profile</button></form><p class="local-profile-note">Your profile is stored on this device for this demo.</p></article><div class="account-activity"><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">TICKET HISTORY</span><h2>Your bookings</h2></div><button class="account-inline-action" data-action="manage">Booking lookup</button></div>${bookingRows}</article><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">SELLER DASHBOARD</span><h2>Your listings</h2></div><button class="account-inline-action" data-action="sell">Add tickets</button></div>${listingRows}</article></div></div></section>`;
+  return `<section class="account-page">${backButton()}<div class="page-heading"><span class="section-kicker">YOUR ECHO LIVE ACCOUNT</span><h1>Profile &amp; activity</h1><p>Keep your contact details and ticket activity together.</p></div><div class="account-grid"><article class="profile-card"><div class="profile-identity"><div class="profile-avatar">${esc(initials || "EL")}</div><div><span class="section-kicker">LOCAL DEMO PROFILE</span><h2>${esc(profile.name || "Echo Live Member")}</h2><p>Member since ${esc(memberSince)}</p></div></div><form id="profile-form" class="profile-form"><label>Full name<input name="profileName" value="${esc(profile.name || "")}" maxlength="80" required autocomplete="name"></label><label>Email address<input name="profileEmail" type="email" value="${esc(profile.email || "")}" maxlength="120" autocomplete="email" placeholder="Add your email"></label><label>Phone number<input name="profilePhone" type="tel" value="${esc(profile.phone || "")}" maxlength="30" autocomplete="tel" placeholder="Add your phone number"></label><label>Region<input name="profileRegion" value="${esc(profile.region || "Malaysia")}" maxlength="60" autocomplete="country-name"></label><button class="primary-btn" type="submit">Save profile</button></form><p class="local-profile-note">Your profile is stored on this device for this demo.</p></article><div class="account-activity"><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">TICKET HISTORY</span><h2>Your bookings</h2></div><button class="account-inline-action" data-action="manage">Booking lookup</button></div>${bookingRows}</article><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">SELLER DASHBOARD</span><h2>Your listings</h2></div><button class="account-inline-action" data-action="sell">Add tickets</button></div>${listingRows}</article></div></div></section>`;
 }
 
 function render() {
@@ -322,7 +356,7 @@ function publishListing(form) {
   if (!event || event.resaleAllowed === false || !event.sections?.includes(String(formData.get("section"))) || quantity < 1 || quantity > 6 || price < 1 || price > 2000) { toast("Please check the ticket details and try again."); return; }
   const listing = { id: uuid(), eventId: event.id, eventName: event.name, section: String(formData.get("section")), row: String(formData.get("row")).toUpperCase(), seats: `Seats ${String(formData.get("seats")).trim()}`, qty: quantity, price, badges: ["Seller listed", "Reserved seats"], score: 7.8, sellerListing: true, sellerName: String(formData.get("sellerName")).trim(), sellerEmail: String(formData.get("sellerEmail")).trim(), createdAt: new Date().toISOString() };
   if (!saveSellerListings([...getSellerListings(), listing])) { toast(state.toast); return; }
-  restoreSellerListings(); state.page = "home"; state.eventId = event.id; state.step = 1; state.listing = null;
+  restoreSellerListings(); resetPageHistory(); state.sellDraft = null; state.eventId = event.id; state.step = 1; state.listing = null;
   state.section = listing.section; state.classFilter = "all"; state.quantity = Math.min(2, quantity); state.sort = "recommended"; state.minPrice = 0; state.maxPrice = 2000; state.searchTerm = ""; state.locationFilter = event.venueKey; state.locationOpen = false;
   state.toast = "Your tickets are now listed in the marketplace."; render();
   $("#market")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -360,9 +394,9 @@ root.addEventListener("click", async event => {
   else if (action === "choose-listing") { state.listing = currentEvent().listings.find(item => item.id === button.dataset.id) || null; setStep(2); }
   else if (action === "step") setStep(Number(button.dataset.step));
   else if (action === "begin-checkout") setStep(3);
-  else if (action === "sell") { state.page = "sell"; render(); }
-  else if (action === "account") { state.page = "account"; state.mapExpanded = false; render(); }
-  else if (action === "go-home") { state.page = "home"; render(); }
+  else if (action === "sell") { navigateToPage("sell"); }
+  else if (action === "account") { state.mapExpanded = false; navigateToPage("account"); }
+  else if (action === "go-back") returnToPreviousPage();
   else if (action === "remove-listing") {
     const listingId = button.dataset.id;
     saveSellerListings(getSellerListings().filter(item => item.id !== listingId));
@@ -371,12 +405,12 @@ root.addEventListener("click", async event => {
   else if (action === "open-account-booking") {
     state.booking = getBookings().find(item => String(item.id || item.bookingId) === button.dataset.id) || null;
     state.bookingId = state.booking?.id || state.booking?.bookingId || "";
-    state.page = "home"; state.step = 4; render();
+    resetPageHistory(); state.step = 4; render();
     $("#booking-search")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  else if (action === "manage") { event.preventDefault(); state.page = "home"; state.booking = null; setStep(4); }
-  else if (action === "show-booking") { state.page = "home"; state.bookingId = state.receipt?.id || ""; state.booking = state.receipt; setStep(4); }
-  else if (action === "new-search") { state.page = "home"; state.listing = null; state.receipt = null; state.section = "All sections"; setStep(1); }
+  else if (action === "manage") { event.preventDefault(); resetPageHistory(); state.booking = null; setStep(4); }
+  else if (action === "show-booking") { resetPageHistory(); state.bookingId = state.receipt?.id || ""; state.booking = state.receipt; setStep(4); }
+  else if (action === "new-search") { resetPageHistory(); state.listing = null; state.receipt = null; state.section = "All sections"; setStep(1); }
   else if (action === "cancel-booking") await cancelBooking();
   else if (action === "dismiss") { state.toast = ""; render(); }
   else if (action === "map-help") toast(`Select a ${currentEvent().venue} zone to filter this show’s sample listings. The map is schematic; check the event organizer for the final seat plan.`);
