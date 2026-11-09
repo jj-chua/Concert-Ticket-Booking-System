@@ -95,3 +95,21 @@ body.map-open{overflow:hidden}
   .event-card-info h3{font-size:15px}
   .market-section{padding-top:25px;padding-bottom:38px}
 }
+/* Compact header actions: selling and account access */
+.main-nav{display:none}
+.top-actions{margin-left:auto;gap:12px}
+.sell-button{height:40px;padding:0 16px;border:1px solid #684191;border-radius:6px;background:#fff;color:#523277;font-size:14px;font-weight:800;white-space:nowrap;transition:background .15s,border-color .15s}
+.sell-button:hover{background:#f5effb;border-color:#523277}
+.sell-button:focus-visible,.account-button:focus-visible{outline:3px solid rgba(104,65,145,.25);outline-offset:2px}
+.account-button{width:42px;height:42px;padding:0;display:grid;place-items:center;border:1px solid #ded8e5;border-radius:50%;background:#fff;color:#49345d;cursor:pointer}
+.account-button:hover{background:#f7f3fa;border-color:#bfaed0}
+.account-button svg{display:block;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:1030px){.top-actions{gap:9px}.search-box{width:min(190px,25vw)}}
+@media(max-width:760px){
+  .top-actions{gap:5px}
+  .sell-button{height:34px;padding:0 8px;font-size:11px}
+  .account-button{width:34px;height:34px}
+  .account-button svg{width:18px;height:18px}
+  .location-button{width:34px;height:34px}
+  .topbar.search-open .sell-button{display:none}
+}
