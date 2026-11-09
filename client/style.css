@@ -228,4 +228,9 @@ body.map-open{overflow:hidden}
 .stadium-stage-360 circle{fill:#38204a;stroke:#fff;stroke-width:3}
 .stadium-stage-360 text{fill:#fff;font:800 10px Arial,sans-serif;letter-spacing:.5px}
 .unifi-stage path,.stadium-stage path{fill:#38204a}
+.text-back.back-icon-button{display:grid;place-items:center;width:46px;height:46px;margin:0 0 14px;padding:0;border:1px solid #e3dce9;border-radius:50%;background:#fff;color:#38204a;box-shadow:0 4px 13px rgba(56,32,74,.12);transition:transform .16s,background .16s,box-shadow .16s}
+.text-back.back-icon-button:hover{background:#f6f0fb;box-shadow:0 6px 16px rgba(56,32,74,.18);transform:none}
+.text-back.back-icon-button:focus-visible{outline:3px solid rgba(129,80,189,.35);outline-offset:3px}
+.back-icon-button svg{display:block;width:23px;height:23px;overflow:visible}
+.back-icon-button path{fill:none;stroke:currentColor;stroke-width:3.6;stroke-linecap:round;stroke-linejoin:round}
 
