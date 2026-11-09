@@ -1,12 +1,12 @@
 # ECHO LIVE — Concert Ticket Marketplace
 
-ECHO LIVE is a responsive, framework-free concert ticket marketplace prototype built with HTML, CSS, and vanilla JavaScript. It uses a large-format event hero, concert artwork, a clickable venue map, ticket listings, and filters inspired by live-event resale marketplaces.
+ECHO LIVE is a responsive, framework-free concert ticket marketplace prototype built with HTML, CSS, and vanilla JavaScript. It features official Genting concert artwork, animated plum wave accents, a clickable Arena of Stars zone map, ticket listings, and filters.
 
 ## Run the client
 
 Open [`client/index.html`](client/index.html) in a browser. No package installation or build step is required. Demo bookings are stored in browser local storage.
 
-The demo includes upcoming Kuala Lumpur events sourced from Live Nation Malaysia. Event dates, ticket status, and artwork link back to the official event pages. Ticket listing prices and inventory are sample data for UI demonstration and are not live offers.
+The demo features upcoming Arena of Stars concerts sourced from Resorts World Genting, including Priscilla Abby's 19+ Malaysia Concert on 5 December 2026. Event dates and posters link back to official event pages. Ticket listing prices and inventory are sample data for UI demonstration and are not live offers. The interactive zone map is an illustrative diagram, not a live seat map or a scale drawing.
 
 ## Connect an API
 
