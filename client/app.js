@@ -36,11 +36,28 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const money = value => `RM ${Number(value || 0).toFixed(2)}`;
 const uuid = () => window.crypto?.randomUUID?.() || "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => { const n = Math.random() * 16 | 0; return (c === "x" ? n : (n & 3 | 8)).toString(16); });
-const state = { step: 1, events: EVENTS, eventId: "priscilla-abby-genting-2026", section: "All sections", classFilter: "all", quantity: 2, sort: "recommended", minPrice: 0, maxPrice: 2000, listing: null, key: "", name: "", email: "", receipt: null, bookingId: "", booking: null, lookupBusy: false, cancelBusy: false, refreshing: false, toast: "", searchTerm: "", searchOpen: false, mapExpanded: false };
+const state = { page: "home", step: 1, events: EVENTS, eventId: "priscilla-abby-genting-2026", section: "All sections", classFilter: "all", quantity: 2, sort: "recommended", minPrice: 0, maxPrice: 2000, listing: null, key: "", name: "", email: "", receipt: null, bookingId: "", booking: null, lookupBusy: false, cancelBusy: false, refreshing: false, toast: "", searchTerm: "", searchOpen: false, mapExpanded: false };
 const root = $("#root");
 const currentEvent = () => state.events.find(item => item.id === state.eventId) || EVENTS[0];
 const selectedCount = () => Number(state.quantity || 2);
 const getBookings = () => { try { return JSON.parse(localStorage.getItem("echo-ticket-orders") || "[]"); } catch { return []; } };
+const getSellerListings = () => { try { return JSON.parse(localStorage.getItem("echo-seller-listings") || "[]"); } catch { return []; } };
+const saveSellerListings = listings => { try { localStorage.setItem("echo-seller-listings", JSON.stringify(listings)); return true; } catch { state.toast = "Could not save this listing on this device."; return false; } };
+function restoreSellerListings() {
+  const owned = getSellerListings();
+  state.events.forEach(event => {
+    event.listings = (event.listings || []).filter(item => !item.sellerListing).concat(owned.filter(item => item.eventId === event.id));
+  });
+}
+function getMemberProfile() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("echo-member-profile") || "null");
+    if (saved) return saved;
+    const profile = { id: uuid(), name: "Echo Live Member", email: "", phone: "", region: "Malaysia", joinedAt: new Date().toISOString() };
+    localStorage.setItem("echo-member-profile", JSON.stringify(profile));
+    return profile;
+  } catch { return { id: "local-member", name: "Echo Live Member", email: "", phone: "", region: "Malaysia", joinedAt: new Date().toISOString() }; }
+}
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } });
@@ -155,14 +172,35 @@ function bookingView() {
   return `<section class="manage-card" id="booking-search"><div class="manage-heading"><span class="section-kicker">YOUR ECHO LIVE ORDERS</span><h2>Manage a booking</h2><p>Enter the booking reference from your confirmation email.</p></div><form id="lookup-form"><label for="booking-reference">Booking reference</label><div class="lookup-row"><input id="booking-reference" name="bookingId" value="${esc(state.bookingId)}" placeholder="e.g. 3c2b1a…" autocomplete="off"><button class="primary-btn" type="submit" ${state.lookupBusy ? "disabled" : ""}>${state.lookupBusy ? "Searching…" : "Find booking →"}</button></div></form>${booking ? `<article class="booking-result"><div class="booking-result-head"><div><span class="section-kicker">BOOKING DETAILS</span><h3>${esc(booking.eventName || booking.event || "Live event")}</h3></div><span class="booking-status ${cancelled ? "cancelled" : ""}">${cancelled ? "CANCELLED" : esc(String(booking.status || "CONFIRMED").toUpperCase())}</span></div><div class="result-ref">Reference <strong>${esc(booking.id || booking.bookingId || state.bookingId)}</strong></div><div class="receipt-grid"><div><small>VENUE</small><strong>${esc(booking.venue || "—")}</strong></div><div><small>DATE / TIME</small><strong>${esc(booking.date || "—")} · ${esc(booking.time || "—")}</strong></div><div><small>SECTION / ROW</small><strong>${esc(booking.section || "—")} · ${esc(booking.row || "—")}</strong></div><div><small>QUANTITY / TOTAL</small><strong>${Number(booking.quantity || 0)} · ${money(booking.total)}</strong></div></div><div class="result-actions"><span>Cancelled tickets return to availability.</span><button class="cancel-button" data-action="cancel-booking" ${state.cancelBusy || cancelled ? "disabled" : ""}>${state.cancelBusy ? "Cancelling…" : "Cancel booking"}</button></div></article>` : `<div class="empty-bookings"><span>▤</span><strong>No booking selected</strong><small>Your ticket details will appear here.</small></div>`}<button class="secondary-btn" data-action="step" data-step="1">← Browse shows</button></section>`;
 }
 
+function sellView() {
+  const profile = getMemberProfile();
+  const events = state.events.map(event => `<option value="${esc(event.id)}" ${event.id === state.eventId ? "selected" : ""}>${esc(event.name)} · ${esc(event.date)}</option>`).join("");
+  const sections = SECTIONS.filter(section => section !== "All sections").map(section => `<option value="${section}">${section}</option>`).join("");
+  const rows = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(row => `<option>${row}</option>`).join("");
+  return `<section class="sell-page"><button class="text-back" data-action="go-home">← Back to concerts</button><div class="page-heading"><span class="section-kicker">SELL ON ECHO LIVE</span><h1>Make someone’s night.</h1><p>List your tickets for a show at Arena of Stars.</p></div><div class="sell-layout"><form id="sell-form" class="sell-form"><div class="form-section-title"><span>01</span><div><h2>Ticket details</h2><p>Tell fans what you’re selling.</p></div></div><label>Concert<select name="eventId" required>${events}</select></label><div class="form-fields-two"><label>Section<select name="section" required>${sections}</select></label><label>Row<select name="row" required>${rows}</select></label></div><div class="form-fields-two"><label>Seat numbers<input name="seats" required maxlength="30" placeholder="e.g. 5–6" autocomplete="off"></label><label>Quantity<input name="quantity" type="number" min="1" max="6" step="1" value="2" required></label></div><label>Price per ticket (RM)<input name="price" type="number" min="1" max="2000" step="1" placeholder="e.g. 350" required></label><div class="form-section-title seller-contact-title"><span>02</span><div><h2>Seller contact</h2><p>Buyers won’t see your details on the listing.</p></div></div><label>Your name<input name="sellerName" value="${esc(profile.name)}" maxlength="80" required autocomplete="name"></label><label>Email address<input name="sellerEmail" type="email" value="${esc(profile.email)}" maxlength="120" required autocomplete="email" placeholder="you@example.com"></label><div class="local-save-note"><span>✓</span><p><strong>Instant demo listing</strong><br>Your ticket will appear in the marketplace and be saved on this device.</p></div><button class="primary-btn publish-button" type="submit">Publish tickets</button></form><aside class="sell-side-card"><span class="section-kicker">HOW IT WORKS</span><h2>List in a few steps.</h2><ol><li><span>1</span><div><strong>Add your seat details</strong><small>Choose the concert, section, row and seats.</small></div></li><li><span>2</span><div><strong>Set your asking price</strong><small>Enter a price for each ticket.</small></div></li><li><span>3</span><div><strong>Publish to the marketplace</strong><small>Your offer becomes available to fans right away.</small></div></li></ol><p class="sell-side-footnote">Demo listings stay in this browser’s local storage.</p></aside></div></section>`;
+}
+
+function accountView() {
+  const profile = getMemberProfile();
+  const bookings = getBookings();
+  const listings = getSellerListings();
+  const initials = (profile.name || "E").trim().split(/\s+/).map(word => word[0]).slice(0, 2).join("").toUpperCase();
+  const memberSince = new Date(profile.joinedAt || Date.now()).toLocaleDateString("en-MY", { month: "short", year: "numeric" });
+  const bookingRows = bookings.length ? bookings.slice(0, 5).map(booking => `<article class="account-data-row"><div><strong>${esc(booking.eventName || booking.event || "Live event")}</strong><small>${esc(booking.date || "Date pending")} · ${esc(booking.section || "Tickets")} · ${Number(booking.quantity || 0)} ticket(s)</small></div><span class="booking-status ${["cancelled", "canceled"].includes(String(booking.status).toLowerCase()) ? "cancelled" : ""}">${esc(String(booking.status || "confirmed").toUpperCase())}</span><button class="account-inline-action" data-action="open-account-booking" data-id="${esc(booking.id || booking.bookingId || "")}">Details</button></article>`).join("") : `<div class="account-empty">No bookings yet. Your ticket purchases will appear here.</div>`;
+  const listingRows = listings.length ? listings.map(listing => { const event = state.events.find(item => item.id === listing.eventId); return `<article class="account-data-row"><div><strong>${esc(event?.name || listing.eventName || "Live event")}</strong><small>${esc(listing.section)} · Row ${esc(listing.row)} · ${esc(listing.seats)} · ${Number(listing.qty)} available</small></div><strong class="account-listing-price">${money(listing.price)} <small>each</small></strong><button class="account-inline-action remove-listing-action" data-action="remove-listing" data-id="${esc(listing.id)}">Remove</button></article>`; }).join("") : `<div class="account-empty">No active listings. Use Sell to offer tickets to other fans.</div>`;
+  return `<section class="account-page"><button class="text-back" data-action="go-home">← Back to concerts</button><div class="page-heading"><span class="section-kicker">YOUR ECHO LIVE ACCOUNT</span><h1>Profile &amp; activity</h1><p>Keep your contact details and ticket activity together.</p></div><div class="account-grid"><article class="profile-card"><div class="profile-identity"><div class="profile-avatar">${esc(initials || "EL")}</div><div><span class="section-kicker">LOCAL DEMO PROFILE</span><h2>${esc(profile.name || "Echo Live Member")}</h2><p>Member since ${esc(memberSince)}</p></div></div><form id="profile-form" class="profile-form"><label>Full name<input name="profileName" value="${esc(profile.name || "")}" maxlength="80" required autocomplete="name"></label><label>Email address<input name="profileEmail" type="email" value="${esc(profile.email || "")}" maxlength="120" autocomplete="email" placeholder="Add your email"></label><label>Phone number<input name="profilePhone" type="tel" value="${esc(profile.phone || "")}" maxlength="30" autocomplete="tel" placeholder="Add your phone number"></label><label>Region<input name="profileRegion" value="${esc(profile.region || "Malaysia")}" maxlength="60" autocomplete="country-name"></label><button class="primary-btn" type="submit">Save profile</button></form><p class="local-profile-note">Your profile is stored on this device for this demo.</p></article><div class="account-activity"><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">TICKET HISTORY</span><h2>Your bookings</h2></div><button class="account-inline-action" data-action="manage">Booking lookup</button></div>${bookingRows}</article><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">SELLER DASHBOARD</span><h2>Your listings</h2></div><button class="account-inline-action" data-action="sell">Add tickets</button></div>${listingRows}</article></div></div></section>`;
+}
+
 function render() {
   const event = currentEvent();
   document.body.classList.toggle("map-open", state.mapExpanded);
-  root.innerHTML = `<div class="app-shell"><header class="topbar ${state.searchOpen ? "search-open" : ""}"><a class="brand" href="#top">${logo()}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><div class="top-actions"><label class="search-box"><span>⌕</span><input name="eventSearch" value="${esc(state.searchTerm)}" placeholder="Artist, event or venue" aria-label="Search shows"></label><button class="location-button" data-action="scroll-market">⌖ <span>Genting Highlands</span></button><button class="sell-button" data-action="sell">Sell</button><button class="account-button" data-action="manage" aria-label="Account and my bookings" title="Account"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.25"></circle><circle cx="12" cy="9" r="3"></circle><path d="M6.8 18.2c.7-2.7 2.7-4.2 5.2-4.2s4.5 1.5 5.2 4.2"></path></svg></button></div><button class="mobile-search" data-action="toggle-search" aria-label="Search">⌕</button></header><main id="top"><section class="event-hero"><img class="hero-photo" src="${esc(event.image)}" alt="${esc(event.imageAlt)}" decoding="async" fetchpriority="high" onerror="this.hidden=true"><div class="hero-shade"></div><div class="hero-inner"><div class="hero-event-copy"><div class="hero-tags"><span>${esc(event.tag)}</span><span class="live-tag">LIVE MUSIC</span></div><p class="hero-kicker">${esc(event.tour)}</p><h1>${esc(event.name)}</h1><p class="hero-meta">${esc(event.date)} <i></i> ${esc(event.venue)} <i></i> ${esc(event.area)}</p><p class="hero-time">${esc(event.time)} · ${esc(event.state === "SOLD OUT" ? "Official tickets sold out" : "Demo marketplace listings shown")}</p><a class="primary-btn hero-button" href="#market">Find tickets</a></div><div class="hero-poster-wrap">${posterImage(event, "hero-poster")}<span>OFFICIAL EVENT ARTWORK</span></div></div><div class="hero-bottom"><span><i class="live-dot"></i> ECHO LIVE PICKS</span><a href="${esc(event.source)}" target="_blank" rel="noopener">Official event details ↗</a></div></section>
+  root.innerHTML = `<div class="app-shell"><header class="topbar ${state.searchOpen ? "search-open" : ""}"><a class="brand" href="#top">${logo()}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><div class="top-actions"><label class="search-box"><span>⌕</span><input name="eventSearch" value="${esc(state.searchTerm)}" placeholder="Artist, event or venue" aria-label="Search shows"></label><button class="location-button" data-action="scroll-market">⌖ <span>Genting Highlands</span></button><button class="sell-button" data-action="sell">Sell</button><button class="account-button" data-action="account" aria-label="Account and my bookings" title="Account"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.25"></circle><circle cx="12" cy="9" r="3"></circle><path d="M6.8 18.2c.7-2.7 2.7-4.2 5.2-4.2s4.5 1.5 5.2 4.2"></path></svg></button></div><button class="mobile-search" data-action="toggle-search" aria-label="Search">⌕</button></header><main id="top"><section class="event-hero"><img class="hero-photo" src="${esc(event.image)}" alt="${esc(event.imageAlt)}" decoding="async" fetchpriority="high" onerror="this.hidden=true"><div class="hero-shade"></div><div class="hero-inner"><div class="hero-event-copy"><div class="hero-tags"><span>${esc(event.tag)}</span><span class="live-tag">LIVE MUSIC</span></div><p class="hero-kicker">${esc(event.tour)}</p><h1>${esc(event.name)}</h1><p class="hero-meta">${esc(event.date)} <i></i> ${esc(event.venue)} <i></i> ${esc(event.area)}</p><p class="hero-time">${esc(event.time)} · ${esc(event.state === "SOLD OUT" ? "Official tickets sold out" : "Demo marketplace listings shown")}</p><a class="primary-btn hero-button" href="#market">Find tickets</a></div><div class="hero-poster-wrap">${posterImage(event, "hero-poster")}<span>OFFICIAL EVENT ARTWORK</span></div></div><div class="hero-bottom"><span><i class="live-dot"></i> ECHO LIVE PICKS</span><a href="${esc(event.source)}" target="_blank" rel="noopener">Official event details ↗</a></div></section>
       <section class="discovery" id="shows"><div class="discovery-head"><div><span class="section-kicker">UP NEXT AT ARENA OF STARS</span><h2>Find your next live moment</h2><p>Four nights of live music at Resorts World Genting.</p></div><button class="all-shows" data-action="scroll-market">View all shows&nbsp; →</button></div><div class="event-strip">${eventCards()}</div></section>
       <section class="market-section" id="market"><div class="market-heading"><div><span class="section-kicker">TICKETS FOR ${esc(event.name.toUpperCase())}</span><h2>Pick a spot. Feel every song.</h2><p>${esc(event.date)} · ${esc(event.venue)} · ${esc(event.area)}</p></div><div class="event-status ${event.state === "SOLD OUT" ? "sold-out" : ""}"><i></i>${esc(event.state)}</div></div>${stepper()}${state.step === 1 ? listingPanel(event) : ""}${state.step === 2 ? reviewView(event) : ""}${state.step === 3 ? checkoutView(event) : ""}${state.step === 4 ? bookingView() : ""}</section>
     </main><footer class="site-footer" id="footer"><a class="brand footer-brand" href="#top">${logo(32)}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><span>© ${new Date().getFullYear()} ECHO LIVE. All rights reserved.</span><div><a href="#footer">Help center</a><a href="#footer">Terms</a><a href="#footer">Privacy</a></div></footer>${state.toast ? `<div class="toast" role="status"><span>!</span>${esc(state.toast)}<button data-action="dismiss" aria-label="Dismiss">×</button></div>` : ""}</div>`;
-}
+  const main = $("#top", root);
+  if (state.page === "sell") main.innerHTML = sellView();
+  else if (state.page === "account") main.innerHTML = accountView();}
 
 function setStep(step) {
   if (step === 2 && !state.listing) return;
@@ -193,7 +231,33 @@ async function loadEvents() {
       if (!state.events.some(item => item.id === state.eventId)) state.eventId = state.events[0].id;
     }
   } catch { /* Keep current event cards. */ }
+  restoreSellerListings();
   render();
+}
+
+function publishListing(form) {
+  const formData = new FormData(form);
+  const event = state.events.find(item => item.id === formData.get("eventId"));
+  const quantity = Number(formData.get("quantity"));
+  const price = Number(formData.get("price"));
+  if (!event || quantity < 1 || quantity > 6 || price < 1 || price > 2000) { toast("Please check the ticket details and try again."); return; }
+  const listing = { id: uuid(), eventId: event.id, eventName: event.name, section: String(formData.get("section")), row: String(formData.get("row")).toUpperCase(), seats: `Seats ${String(formData.get("seats")).trim()}`, qty: quantity, price, badges: ["Seller listed", "Reserved seats"], score: 7.8, sellerListing: true, sellerName: String(formData.get("sellerName")).trim(), sellerEmail: String(formData.get("sellerEmail")).trim(), createdAt: new Date().toISOString() };
+  if (!saveSellerListings([...getSellerListings(), listing])) { toast(state.toast); return; }
+  restoreSellerListings(); state.page = "home"; state.eventId = event.id; state.step = 1; state.listing = null;
+  state.section = listing.section; state.classFilter = "all"; state.quantity = Math.min(2, quantity); state.sort = "recommended"; state.minPrice = 0; state.maxPrice = 2000; state.searchTerm = "";
+  state.toast = "Your tickets are now listed in the marketplace."; render();
+  $("#market")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function saveProfile(form) {
+  const profile = getMemberProfile();
+  profile.name = String(form.elements.profileName.value).trim();
+  profile.email = String(form.elements.profileEmail.value).trim();
+  profile.phone = String(form.elements.profilePhone.value).trim();
+  profile.region = String(form.elements.profileRegion.value).trim();
+  try { localStorage.setItem("echo-member-profile", JSON.stringify(profile)); }
+  catch { toast("Could not save your profile on this device."); return; }
+  state.toast = "Your profile has been saved."; render();
 }
 
 root.addEventListener("click", async event => {
@@ -211,10 +275,23 @@ root.addEventListener("click", async event => {
   else if (action === "choose-listing") { state.listing = currentEvent().listings.find(item => item.id === button.dataset.id) || null; setStep(2); }
   else if (action === "step") setStep(Number(button.dataset.step));
   else if (action === "begin-checkout") setStep(3);
-  else if (action === "sell") toast("Ticket selling is coming soon.");
-  else if (action === "manage") { event.preventDefault(); state.booking = null; setStep(4); }
-  else if (action === "show-booking") { state.bookingId = state.receipt?.id || ""; state.booking = state.receipt; setStep(4); }
-  else if (action === "new-search") { state.listing = null; state.receipt = null; state.section = "All sections"; setStep(1); }
+  else if (action === "sell") { state.page = "sell"; render(); }
+  else if (action === "account") { state.page = "account"; state.mapExpanded = false; render(); }
+  else if (action === "go-home") { state.page = "home"; render(); }
+  else if (action === "remove-listing") {
+    const listingId = button.dataset.id;
+    saveSellerListings(getSellerListings().filter(item => item.id !== listingId));
+    restoreSellerListings(); state.toast = "Your listing has been removed."; render();
+  }
+  else if (action === "open-account-booking") {
+    state.booking = getBookings().find(item => String(item.id || item.bookingId) === button.dataset.id) || null;
+    state.bookingId = state.booking?.id || state.booking?.bookingId || "";
+    state.page = "home"; state.step = 4; render();
+    $("#booking-search")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  else if (action === "manage") { event.preventDefault(); state.page = "home"; state.booking = null; setStep(4); }
+  else if (action === "show-booking") { state.page = "home"; state.bookingId = state.receipt?.id || ""; state.booking = state.receipt; setStep(4); }
+  else if (action === "new-search") { state.page = "home"; state.listing = null; state.receipt = null; state.section = "All sections"; setStep(1); }
   else if (action === "cancel-booking") await cancelBooking();
   else if (action === "dismiss") { state.toast = ""; render(); }
   else if (action === "map-help") toast("Select a ticket zone to filter this show’s sample listings. Section positions are illustrative, not to scale.");
@@ -246,6 +323,8 @@ root.addEventListener("input", event => {
 root.addEventListener("submit", async event => {
   if (event.target.id === "checkout-form") { event.preventDefault(); await submitBooking(); }
   else if (event.target.id === "lookup-form") { event.preventDefault(); await findBooking(); }
+  else if (event.target.id === "sell-form") { event.preventDefault(); publishListing(event.target); }
+  else if (event.target.id === "profile-form") { event.preventDefault(); saveProfile(event.target); }
 });
 
 async function submitBooking() {
@@ -257,7 +336,14 @@ async function submitBooking() {
     if (DEMO_MODE) {
       booking = { id: uuid(), status: "confirmed", ...payload, listingSnapshot: state.listing, createdAt: new Date().toISOString() };
       localStorage.setItem("echo-ticket-orders", JSON.stringify([booking, ...getBookings()]));
-      event.listings = event.listings.filter(item => item.id !== state.listing.id);
+      const currentListing = event.listings.find(item => item.id === state.listing.id);
+      if (currentListing?.sellerListing && currentListing.qty > selectedCount()) {
+        currentListing.qty -= selectedCount();
+        saveSellerListings(getSellerListings().map(item => item.id === currentListing.id ? { ...item, qty: currentListing.qty } : item));
+      } else {
+        event.listings = event.listings.filter(item => item.id !== state.listing.id);
+        if (currentListing?.sellerListing) saveSellerListings(getSellerListings().filter(item => item.id !== currentListing.id));
+      }
     } else booking = await request("/bookings", { method: "POST", headers: { "Idempotency-Key": state.key }, body: JSON.stringify(payload) });
     state.receipt = { ...booking, id: booking.id || booking.bookingId || booking.booking_id, status: booking.status || "confirmed" };
     state.bookingId = state.receipt.id || "";
@@ -294,7 +380,20 @@ async function cancelBooking() {
       const saved = getBookings().map(item => item.id === id ? { ...item, status: "cancelled" } : item);
       localStorage.setItem("echo-ticket-orders", JSON.stringify(saved)); result = saved.find(item => item.id === id);
       const ownerEvent = state.events.find(item => item.id === result?.eventId);
-      if (ownerEvent && result?.listingSnapshot && !ownerEvent.listings.some(item => item.id === result.listingSnapshot.id)) ownerEvent.listings.push(result.listingSnapshot);
+      if (ownerEvent && result?.listingSnapshot) {
+        const snapshot = result.listingSnapshot;
+        const current = ownerEvent.listings.find(item => item.id === snapshot.id);
+        if (snapshot.sellerListing) {
+          const restoredQty = Number(result.quantity || 1);
+          if (current) current.qty += restoredQty;
+          else ownerEvent.listings.push({ ...snapshot, qty: restoredQty });
+          const saved = getSellerListings();
+          const stored = saved.find(item => item.id === snapshot.id);
+          if (stored) stored.qty += restoredQty;
+          else saved.push({ ...snapshot, qty: restoredQty });
+          saveSellerListings(saved);
+        } else if (!current) ownerEvent.listings.push(snapshot);
+      }
     } else result = await request(`/bookings/${encodeURIComponent(id)}`, { method: "DELETE" });
     state.booking = { ...state.booking, ...result, status: result?.status || "cancelled" };
     state.toast = "Your booking has been cancelled.";
@@ -302,6 +401,7 @@ async function cancelBooking() {
   state.cancelBusy = false; render();
 }
 
+restoreSellerListings();
 render();
 loadEvents();
 
