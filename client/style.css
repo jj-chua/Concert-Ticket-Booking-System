@@ -200,3 +200,32 @@ body.map-open{overflow:hidden}
   .account-data-row>div{grid-row:1/3}
 }
 
+/* Venue selector and stadium-specific seating diagrams */
+.location-picker{position:relative;display:flex;align-items:center}
+.location-menu{position:absolute;top:calc(100% + 11px);right:0;z-index:30;width:min(330px,calc(100vw - 28px));padding:8px;border:1px solid #e8e2ed;border-radius:10px;background:#fff;box-shadow:0 15px 36px rgba(28,18,35,.18);display:grid;gap:3px}
+.location-option{width:100%;min-height:42px;padding:9px 11px;border:0;border-radius:6px;background:transparent;text-align:left;color:#3c3145;font-size:13px;cursor:pointer}
+.location-option:hover,.location-option.selected{background:#f5eff9;color:#523277}
+.location-option.selected{font-weight:800}
+.unifi-bowl{fill:#f6f2f8;stroke:#cfc0dc;stroke-width:2}
+.unifi-ring{fill:#eee8f3;stroke:#d1c5dc;stroke-width:1.5}
+.unifi-floor{fill:#ebe3f2;stroke:#b59dc9;stroke-width:1.5}
+.unifi-centerline{stroke:#d2c4dc;stroke-width:1.5;stroke-dasharray:4 5}
+.unifi-stage path,.stadium-stage path{fill:url(#arena-stage);stroke:#25162f;stroke-width:1}
+.unifi-stage text,.stadium-stage text{fill:#fff;font:800 12px Arial,sans-serif;letter-spacing:1.5px}
+.unifi-floor-label{fill:#81728e;font:700 10px Arial,sans-serif;letter-spacing:1.4px}
+.stadium-outline{fill:#eee7da;stroke:#bda98f;stroke-width:2}
+.stadium-tier{fill:none;stroke:#c5b59f;stroke-width:11}
+.stadium-tier-mid{stroke:#bda88e;stroke-width:12}
+.stadium-track{fill:#caa987;stroke:#b49572;stroke-width:1.5}
+.stadium-field{fill:#dce9dc;stroke:#aec2ad;stroke-width:1.5}
+.stadium-field-lines{fill:none;stroke:#b8cbb7;stroke-width:1.2}
+.stadium-level{fill:#71695f;font:800 9px Arial,sans-serif;letter-spacing:1.2px}
+.stadium-gates text{fill:#766a5c;font:800 9px Arial,sans-serif;text-anchor:middle;letter-spacing:1px}
+@media(max-width:760px){
+  .location-menu{right:-94px;width:min(300px,calc(100vw - 22px))}
+  .location-option{font-size:12px}
+}
+.stadium-stage-360 circle{fill:#38204a;stroke:#fff;stroke-width:3}
+.stadium-stage-360 text{fill:#fff;font:800 10px Arial,sans-serif;letter-spacing:.5px}
+.unifi-stage path,.stadium-stage path{fill:#38204a}
+
