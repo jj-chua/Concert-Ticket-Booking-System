@@ -1,6 +1,6 @@
 # ECHO LIVE — Concert Ticket Marketplace
 
-ECHO LIVE is a responsive, framework-free concert ticket marketplace prototype built with HTML, CSS, and vanilla JavaScript. It features official Genting concert artwork, animated plum wave accents, a clickable Arena of Stars zone map, ticket listings, and filters.
+ECHO LIVE is a responsive, framework-free concert ticket marketplace prototype built with HTML, CSS, and vanilla JavaScript. It features official Genting concert artwork, static plum wave accents, a clickable Arena of Stars zone map, ticket listings, and filters.
 
 ## Run the client
 
