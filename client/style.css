@@ -123,6 +123,9 @@ body.map-open{overflow:hidden}
 .sell-page,.account-page{max-width:1240px;margin:0 auto;padding:38px 30px 72px;min-height:60vh}
 .text-back{border:0;background:none;padding:5px 0;color:#685579;font-size:13px;font-weight:700;cursor:pointer}
 .text-back:hover{color:#38204a}
+.page-heading-layout{display:flex;align-items:center;gap:18px;margin:20px 0 27px}
+.page-heading-layout>.page-heading{flex:1;min-width:0;margin:0}
+.page-heading-layout .back-icon-button{flex:none;margin:0}
 .page-heading{margin:20px 0 27px}
 .page-heading h1{font-size:clamp(34px,4vw,46px);letter-spacing:-1.4px;margin:7px 0 8px;color:#241b2b}
 .page-heading p{font-size:16px;color:#777080;margin:0}
@@ -187,6 +190,8 @@ body.map-open{overflow:hidden}
   .top-actions .sell-button{padding:0 6px;font-size:12px}
   .top-actions .account-button{width:36px}
   .sell-page,.account-page{padding:24px 16px 42px}
+  .page-heading-layout{align-items:flex-start;gap:12px;margin:17px 0 21px}
+  .page-heading-layout .page-heading h1{font-size:clamp(29px,8vw,34px)}
   .page-heading{margin:17px 0 21px}
   .page-heading h1{font-size:34px}
   .page-heading p{font-size:14px;line-height:1.5}
