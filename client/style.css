@@ -312,4 +312,20 @@ body.map-open{overflow:hidden}
   .filter-row label span{font-size:10px}
   .filter-row select{font-size:10px}
 }
+.admin-page .page-heading-layout{align-items:flex-start;margin:0 0 22px}
+.admin-page .page-heading{margin:0}
+.admin-page .page-heading-layout .back-icon-button{top:23px}
+.market-heading-main{display:grid;flex:1;grid-template-columns:minmax(180px,220px) minmax(110px,max-content) minmax(0,1fr);gap:16px;align-items:center}
+.concert-selector{flex:initial}
+.concert-date{display:flex;min-height:42px;flex-direction:column;justify-content:center;gap:5px;padding-left:15px;border-left:1px solid #e4dfea;white-space:nowrap}
+.concert-date>span{color:#81788a;font-size:9px;font-weight:800;letter-spacing:1.2px}
+.concert-date>strong{color:#302638;font-size:13px}
+.market-heading-copy{min-width:0}
+@media(max-width:760px){
+  .admin-page .page-heading-layout .back-icon-button{top:13px}
+  .market-heading-main{grid-template-columns:minmax(0,1fr) max-content;gap:11px 14px;align-items:end}
+  .concert-selector{width:auto;min-width:0;margin:0}
+  .concert-date{min-height:40px;padding:0 0 8px 12px}
+  .market-heading-copy{grid-column:1/-1}
+}
 
