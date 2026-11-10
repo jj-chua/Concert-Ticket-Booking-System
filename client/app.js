@@ -206,15 +206,15 @@ const STADIUM_ZONES = {
   "FLOOR A": { label: [278, 256], paths: ["M232 216 L313 216 L313 295 L232 295 Z"] },
   "FLOOR B": { label: [380, 256], paths: ["M318 216 L442 216 L442 295 L318 295 Z"] },
   "FLOOR C": { label: [482, 256], paths: ["M447 216 L528 216 L528 295 L447 295 Z"] },
-  "CAT 1": { label: [182, 175], paths: ["M106 220 C102 159 146 111 220 82 L249 127 C198 148 165 180 161 222 Z"] },
-  "CAT 2": { label: [578, 175], paths: ["M654 220 C658 159 614 111 540 82 L511 127 C562 148 595 180 599 222 Z"] },
-  "CAT 3": { label: [303, 92], paths: ["M224 80 C270 53 325 42 372 42 L372 94 C324 94 282 105 251 127 Z"] },
-  "CAT 4": { label: [457, 92], paths: ["M536 80 C490 53 435 42 388 42 L388 94 C436 94 478 105 509 127 Z"] },
-  "CAT 5": { label: [380, 392], paths: ["M247 365 C290 393 337 408 380 408 C423 408 470 393 513 365 L480 326 C448 348 416 361 380 361 C344 361 312 348 280 326 Z"] },
-  "CAT 6": { label: [116, 300], paths: ["M102 229 C106 277 129 319 166 350 L213 315 C185 291 169 259 165 226 Z"] },
-  "CAT 7": { label: [644, 300], paths: ["M658 229 C654 277 631 319 594 350 L547 315 C575 291 591 259 595 226 Z"] },
-  "CAT 8": { label: [245, 360], paths: ["M169 353 C195 374 218 389 246 399 L273 350 L220 319 Z"] },
-  "CAT 9": { label: [515, 360], paths: ["M591 353 C565 374 542 389 514 399 L487 350 L540 319 Z"] },
+  "CAT 1": { label: [176, 158], paths: ["M106 220 C102 159 146 111 220 82 L249 127 C198 148 165 180 161 222 Z"] },
+  "CAT 2": { label: [584, 158], paths: ["M654 220 C658 159 614 111 540 82 L511 127 C562 148 595 180 599 222 Z"] },
+  "CAT 3": { label: [303, 80], paths: ["M224 80 C270 53 325 42 372 42 L372 94 C324 94 282 105 251 127 Z"] },
+  "CAT 4": { label: [457, 80], paths: ["M536 80 C490 53 435 42 388 42 L388 94 C436 94 478 105 509 127 Z"] },
+  "CAT 5": { label: [380, 380], paths: ["M247 365 C290 393 337 408 380 408 C423 408 470 393 513 365 L480 326 C448 348 416 361 380 361 C344 361 312 348 280 326 Z"] },
+  "CAT 6": { label: [140, 286], paths: ["M102 229 C106 277 129 319 166 350 L213 315 C185 291 169 259 165 226 Z"] },
+  "CAT 7": { label: [620, 286], paths: ["M658 229 C654 277 631 319 594 350 L547 315 C575 291 591 259 595 226 Z"] },
+  "CAT 8": { label: [222, 358], paths: ["M169 353 C195 374 218 389 246 399 L273 350 L220 319 Z"] },
+  "CAT 9": { label: [538, 358], paths: ["M591 353 C565 374 542 389 514 399 L487 350 L540 319 Z"] },
 };
 
 function sectionMap() {
@@ -243,7 +243,7 @@ function unifiArenaMap(event) {
 function nationalStadiumMap(event) {
   const zones = Object.keys(STADIUM_ZONES).filter(name => event.sections.includes(name)).map(name => mapZoneButton(name, STADIUM_ZONES[name], event)).join("");
   const stageMarkup = event.stageLayout === "360" ? `<g class="stadium-stage stadium-stage-360"><circle cx="380" cy="239" r="28"/><text x="380" y="243" text-anchor="middle">360°</text></g>` : `<g class="stadium-stage"><path d="M330 151h100v28H330z"/><text x="380" y="170" text-anchor="middle">STAGE</text></g>`;
-  return `<div class="venue-map arena-map national-map"><svg class="arena-map-svg" viewBox="0 0 760 470" role="group" aria-label="Interactive TM Stadium Nasional Bukit Jalil three-tier seating map"><ellipse class="stadium-outline" cx="380" cy="237" rx="347" ry="211"/><ellipse class="stadium-tier stadium-tier-outer" cx="380" cy="237" rx="315" ry="184"/><ellipse class="stadium-tier stadium-tier-mid" cx="380" cy="237" rx="277" ry="153"/><ellipse class="stadium-track" cx="380" cy="237" rx="232" ry="120"/><rect class="stadium-field" x="199" y="164" width="362" height="151" rx="7"/><path class="stadium-field-lines" d="M199 239.5H561M380 164V315"/><circle class="stadium-field-lines" cx="380" cy="239" r="30"/><g class="stadium-zones">${zones}</g>${stageMarkup}<text class="stadium-level level-one" x="380" y="121" text-anchor="middle">LEVEL 1</text><text class="stadium-level level-two" x="380" y="86" text-anchor="middle">LEVEL 2</text><text class="stadium-level level-three" x="380" y="54" text-anchor="middle">LEVEL 3</text><g class="stadium-gates"><text x="95" y="408">GATE A</text><text x="380" y="430">GATE B</text><text x="665" y="408">GATE C</text></g></svg><div class="map-footnote">TM Stadium Nasional · 3-tier outdoor oval · schematic concert layout</div></div>`;
+  return `<div class="venue-map arena-map national-map"><svg class="arena-map-svg" viewBox="0 0 760 470" role="group" aria-label="Interactive TM Stadium Nasional Bukit Jalil three-tier seating map"><ellipse class="stadium-outline" cx="380" cy="237" rx="347" ry="211"/><ellipse class="stadium-tier stadium-tier-outer" cx="380" cy="237" rx="315" ry="184"/><ellipse class="stadium-tier stadium-tier-mid" cx="380" cy="237" rx="277" ry="153"/><ellipse class="stadium-track" cx="380" cy="237" rx="232" ry="120"/><rect class="stadium-field" x="199" y="164" width="362" height="151" rx="7"/><path class="stadium-field-lines" d="M199 239.5H561M380 164V315"/><circle class="stadium-field-lines" cx="380" cy="239" r="30"/><g class="stadium-zones">${zones}</g>${stageMarkup}<text class="stadium-level level-one" x="380" y="103" text-anchor="middle">LEVEL 1</text><text class="stadium-level level-two" x="380" y="71" text-anchor="middle">LEVEL 2</text><text class="stadium-level level-three" x="380" y="42" text-anchor="middle">LEVEL 3</text><g class="stadium-gates"><text x="95" y="408">GATE A</text><text x="380" y="430">GATE B</text><text x="665" y="408">GATE C</text></g></svg><div class="map-footnote">TM Stadium Nasional · 3-tier outdoor oval · schematic concert layout</div></div>`;
 }
 function listingCard(item, index) {
   const estimated = item.price * selectedCount();
