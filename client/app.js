@@ -3,9 +3,11 @@ const API_BASE = (window.EVENT_API_BASE_URL || "").replace(/\/$/, "");
 const DEMO_MODE = !API_BASE;
 const VENUE_SECTIONS = {
   "arena-stars": ["VVIP", "VIP", "PS1", "PS2", "PS3", "PS4"],
-  "unifi-arena": ["VVIP", "VIP", "PS1", "PS2", "PS3", "PS4", "GA"],
+  "unifi-arena": ["VIP GOLD (STANDING)", "VIP GOLD (SEATED)", "VIP SILVER (STANDING)", "VIP SILVER (SEATED)", "CAT 1", "CAT 2 (STANDING)", "CAT 3", "CAT 4", "CAT 5", "CAT 6 (RESTRICTED VIEW)", "CAT 7 (RESTRICTED VIEW)"],
   "tm-stadium-nasional": ["FLOOR A", "FLOOR B", "FLOOR C", "CAT 1", "CAT 2", "CAT 3", "CAT 4", "CAT 5", "CAT 6", "CAT 7", "CAT 8", "CAT 9"],
 };
+const AXIATA_PRICES = [1288, 1288, 988, 988, 688, 598, 558, 498, 398, 358, 258];
+const TM_PRICES = [1288, 1088, 888, 788, 688, 588, 558, 488, 458, 428, 388, 388];
 const EVENTS = [
   { id: "priscilla-abby-genting-2026", venueKey: "arena-stars", name: "Priscilla Abby", tour: "19+ MALAYSIA CONCERT 2026", date: "DEC 05, 2026", isoDate: "2026-12-05", venue: "Arena of Stars", area: "Resorts World Genting · Genting Highlands", city: "Genting Highlands", time: "6:00 PM", state: "DEMO LISTINGS", tag: "GENTING EXCLUSIVE", accent: "priscilla", image: "https://www.rwgenting.com/content/rw-genting/web/zh_cn/entertainment/19-priscilla-abby-malaysia-concert-2026/_jcr_content/root/container/column_container_cop/column-1-wrapper/column_container_172/column-1-wrapper/image_copy.coreimg.jpeg/1793253873176/arena-of-stars-priscilla-abby-con-2026.jpeg", imageAlt: "Official poster for Priscilla Abby 19+ Malaysia Concert 2026", source: "https://www.rwgenting.com/zh_cn/entertainment/19-priscilla-abby-malaysia-concert-2026.html", sourceLabel: "Resorts World Genting", sections: ["VVIP", "VIP", "PS1", "PS2"], listings: [
     { id: "abby-vvip-01", section: "VVIP", row: "A", seats: "Seats 5–6", qty: 2, price: 568, badges: ["Front stage", "Instant download"], score: 9.7 },
@@ -22,7 +24,8 @@ const EVENTS = [
     { id: "yao-ps1-01", section: "PS1", row: "D", seats: "Seats 13–14", qty: 2, price: 718, badges: ["Centre view", "Instant download"], score: 9.4 },
     { id: "yao-ps2-01", section: "PS2", row: "H", seats: "Seats 19–20", qty: 4, price: 548, badges: ["Aisle seats"], score: 9.0 },
     { id: "yao-ps3-01", section: "PS3", row: "K", seats: "Seats 23–24", qty: 4, price: 418, badges: ["Great view"], score: 8.7 },
-    { id: "yao-ps4-01", section: "PS4", row: "M", seats: "Seats 27–28", qty: 4, price: 318, badges: ["Best value"], score: 8.2 },
+    { id: "yao-ps4-01", section: "PS4", row:
+ "M", seats: "Seats 27–28", qty: 4, price: 318, badges: ["Best value"], score: 8.2 },
   ] },
   { id: "jimmy-nicky-genting-2026", venueKey: "arena-stars", name: "Jimmy Lin x Nicky Lee", tour: "CONCERT 2.0 · MALAYSIA", date: "DEC 19, 2026", isoDate: "2026-12-19", venue: "Arena of Stars", area: "Resorts World Genting · Genting Highlands", city: "Genting Highlands", time: "6:00 PM", state: "DEMO LISTINGS", tag: "TWO ICONIC VOICES", accent: "jimmy-nicky", image: "https://www.rwgenting.com/content/rw-genting/web/zh_cn/entertainment/jimmy-x-nicky-concert-2-0-live-in-malaysia-2026/_jcr_content/root/container/column_container_cop/column-1-wrapper/column_container_172/column-1-wrapper/image_copy.coreimg.jpeg/1787733079771/720x720.jpeg", imageAlt: "Official poster for Jimmy Lin x Nicky Lee Concert 2.0 Malaysia", source: "https://rwgenting.com/zh_cn/entertainment/jimmy-x-nicky-concert-2-0-live-in-malaysia-2026.html", sourceLabel: "Resorts World Genting", sections: ["VIP", "PS1", "PS2", "PS3", "PS4"], listings: [
     { id: "jn-vip-01", section: "VIP", row: "B", seats: "Seats 5–6", qty: 2, price: 1198, badges: ["Premium view", "Instant download"], score: 9.7 },
@@ -40,8 +43,8 @@ const LOCATION_OPTIONS = [
 ];
 function sampleTicketListings(showId, venueKey, priceTop, sections = VENUE_SECTIONS[venueKey]) {
   return sections.map((section, index) => {
-    const price = Math.max(168, priceTop - index * 95);
-    const standing = section === "GA" || section.startsWith("FLOOR");
+    const price = venueKey === "unifi-arena" ? AXIATA_PRICES[VENUE_SECTIONS[venueKey].indexOf(section)] : venueKey === "tm-stadium-nasional" ? TM_PRICES[VENUE_SECTIONS[venueKey].indexOf(section)] : Math.max(168, priceTop - index * 95);
+    const standing = section.includes("STANDING") || section === "GA" || section.startsWith("FLOOR");
     return { id: `${showId}-${section.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, section, row: standing ? "GA" : String.fromCharCode(65 + (index % 12)), seats: standing ? "General admission" : `Seats ${5 + index * 2}–${6 + index * 2}`, qty: index % 2 ? 4 : 2, price, badges: [standing ? "Standing admission" : "Reserved seats", "Sample resale", "Instant download"], score: Math.max(7.4, 9.8 - index * 0.16) };
   });
 }
@@ -52,11 +55,12 @@ function makeUpcomingShow(show) {
 EVENTS.push(
   makeUpcomingShow({ id: "babymonster-unifi-2026-11-14", name: "BABYMONSTER", tour: "2026–27 WORLD TOUR · [춤 (CHOOM)]", date: "NOV 14, 2026", isoDate: "2026-11-14", venueKey: "unifi-arena", venue: "Axiata Arena", time: "5:00 PM", state: "SOLD OUT", tag: "OFFICIAL SHOW · DEMO LISTINGS", accent: "unifi", image: "https://networksites.livenationinternational.com/networksites/5cabpce0/babymonster-group_press.jpg?format=webp&quality=75&width=1920", imageAlt: "BABYMONSTER group photo", source: "https://www.livenation.my/event/2026-27-babymonster-world-tour-%EC%B6%A4-choom-in-kuala-lumpur-kuala-lumpur-tickets-edp1682916", priceTop: 888 }),
   makeUpcomingShow({ id: "mcr-tm-stadium-2026-11-19", name: "My Chemical Romance", tour: "SOUTHEAST ASIA TOUR 2026", date: "NOV 19, 2026", isoDate: "2026-11-19", venueKey: "tm-stadium-nasional", venue: "TM Stadium Nasional", time: "Time TBC", state: "ON SALE", tag: "STADIUM SHOW", accent: "tm-stadium", image: "https://dynamicmedia.livenationinternational.com/q/e/s/7e601e78-8c12-4424-9584-ab219054ea65.png?format=webp&quality=75&width=1920", imageAlt: "My Chemical Romance performing live", source: "https://www.livenation.my/event/my-chemical-romance-southeast-asia-2026-kuala-lumpur-tickets-edp1711397", priceTop: 1288 }),
-  makeUpcomingShow({ id: "mcr-tm-stadium-2026-11-20", name: "My Chemical Romance", tour: "SOUTHEAST ASIA TOUR 2026", date: "NOV 20, 2026", isoDate: "2026-11-20", venueKey: "tm-stadium-nasional", venue: "TM Stadium Nasional", time: "Time TBC", state: "ON SALE", tag: "SECOND NIGHT", accent: "tm-stadium", image: "https://dynamicmedia.livenationinternational.com/q/e/s/7e601e78-8c12-4424-9584-ab219054ea65.png?format=webp&quality=75&width=1920", imageAlt: "My Chemical Romance performing live", source: "https://www.livenation.my/event/my-chemical-romance-southeast-asia-2026-kuala-lumpur-tickets-edp1711397", priceTop: 1288 }),
+  makeUpcomingShow({ id: "mcr-tm-stadium-2026-11-20", name: "My Chemical Romance", tour: "SOUTHEAST ASIA TOUR 2026", date: "NOV 20, 2026", isoDate: "2026-11-20", venueKey: "tm-stadium-nasional", venue: "TM Stadium Nasional", time: "Time TBC", state: "ON SA
+LE", tag: "SECOND NIGHT", accent: "tm-stadium", image: "https://dynamicmedia.livenationinternational.com/q/e/s/7e601e78-8c12-4424-9584-ab219054ea65.png?format=webp&quality=75&width=1920", imageAlt: "My Chemical Romance performing live", source: "https://www.livenation.my/event/my-chemical-romance-southeast-asia-2026-kuala-lumpur-tickets-edp1711397", priceTop: 1288 }),
   makeUpcomingShow({ id: "bts-tm-stadium-2026-12-12", name: "BTS", tour: "WORLD TOUR · ARIRANG", date: "DEC 12, 2026", isoDate: "2026-12-12", venueKey: "tm-stadium-nasional", venue: "TM Stadium Nasional", time: "7:30 PM", state: "SOLD OUT", tag: "OFFICIAL TICKETS SOLD OUT", accent: "tm-stadium", image: "https://dynamicmedia.livenationinternational.com/p/i/r/0545f243-606d-4d8a-acb7-bb7210f21353.jpg?format=webp&quality=75&width=1920", imageAlt: "BTS group photo", source: "https://www.livenation.my/event/bts-world-tour-arirang-in-kuala-lumpur-kuala-lumpur-tickets-edp1675786", priceTop: 1588, allowSampleListings: false, resaleAllowed: false, stageLayout: "360" }),
   makeUpcomingShow({ id: "bts-tm-stadium-2026-12-13", name: "BTS", tour: "WORLD TOUR · ARIRANG", date: "DEC 13, 2026", isoDate: "2026-12-13", venueKey: "tm-stadium-nasional", venue: "TM Stadium Nasional", time: "7:30 PM", state: "SOLD OUT", tag: "SECOND NIGHT · SOLD OUT", accent: "tm-stadium", image: "https://dynamicmedia.livenationinternational.com/p/i/r/0545f243-606d-4d8a-acb7-bb7210f21353.jpg?format=webp&quality=75&width=1920", imageAlt: "BTS group photo", source: "https://www.livenation.my/event/bts-world-tour-arirang-in-kuala-lumpur-kuala-lumpur-tickets-edp1675786", priceTop: 1588, allowSampleListings: false, resaleAllowed: false, stageLayout: "360" }),
-  makeUpcomingShow({ id: "westlife-unifi-2027-01-13", name: "Westlife", tour: "25 · THE ANNIVERSARY WORLD TOUR", date: "JAN 13, 2027", isoDate: "2027-01-13", venueKey: "unifi-arena", venue: "Axiata Arena", time: "Time TBC", state: "ON SALE", tag: "NEW SHOW ADDED", accent: "unifi", image: "https://networksites.livenationinternational.com/networksites/kmdmeh2j/westlife-kl-2027_1080x1350_vip_added-show.png?format=webp&quality=75&width=1920", imageAlt: "Westlife 25 anniversary tour Kuala Lumpur poster", source: "https://www.livenation.my/event/westlife-25-the-anniversary-world-tour-kuala-lumpur-tickets-edp1686551", priceTop: 798, sections: ["VVIP", "VIP", "PS1", "PS2", "PS3", "PS4"] }),
-  makeUpcomingShow({ id: "westlife-unifi-2027-01-14", name: "Westlife", tour: "25 · THE ANNIVERSARY WORLD TOUR", date: "JAN 14, 2027", isoDate: "2027-01-14", venueKey: "unifi-arena", venue: "Axiata Arena", time: "Time TBC", state: "ON SALE", tag: "AXIATA ARENA", accent: "unifi", image: "https://networksites.livenationinternational.com/networksites/kmdmeh2j/westlife-kl-2027_1080x1350_vip_added-show.png?format=webp&quality=75&width=1920", imageAlt: "Westlife 25 anniversary tour Kuala Lumpur poster", source: "https://www.livenation.my/event/westlife-25-the-anniversary-world-tour-kuala-lumpur-tickets-edp1686551", priceTop: 798, sections: ["VVIP", "VIP", "PS1", "PS2", "PS3", "PS4"] })
+  makeUpcomingShow({ id: "westlife-unifi-2027-01-13", name: "Westlife", tour: "25 · THE ANNIVERSARY WORLD TOUR", date: "JAN 13, 2027", isoDate: "2027-01-13", venueKey: "unifi-arena", venue: "Axiata Arena", time: "Time TBC", state: "ON SALE", tag: "NEW SHOW ADDED", accent: "unifi", image: "https://networksites.livenationinternational.com/networksites/kmdmeh2j/westlife-kl-2027_1080x1350_vip_added-show.png?format=webp&quality=75&width=1920", imageAlt: "Westlife 25 anniversary tour Kuala Lumpur poster", source: "https://www.livenation.my/event/westlife-25-the-anniversary-world-tour-kuala-lumpur-tickets-edp1686551", priceTop: 798 }),
+  makeUpcomingShow({ id: "westlife-unifi-2027-01-14", name: "Westlife", tour: "25 · THE ANNIVERSARY WORLD TOUR", date: "JAN 14, 2027", isoDate: "2027-01-14", venueKey: "unifi-arena", venue: "Axiata Arena", time: "Time TBC", state: "ON SALE", tag: "AXIATA ARENA", accent: "unifi", image: "https://networksites.livenationinternational.com/networksites/kmdmeh2j/westlife-kl-2027_1080x1350_vip_added-show.png?format=webp&quality=75&width=1920", imageAlt: "Westlife 25 anniversary tour Kuala Lumpur poster", source: "https://www.livenation.my/event/westlife-25-the-anniversary-world-tour-kuala-lumpur-tickets-edp1686551", priceTop: 798 })
 );
 
 const TIERS = [
@@ -85,7 +89,8 @@ function navigateToPage(page) {
 function returnToPreviousPage() {
   if (state.page === "sell") captureSellDraft();
   if (state.pageHistory.length > 1) state.pageHistory.pop();
-  state.page = state.pageHistory.at(-1) || "home";
+  state.page = state.p
+ageHistory.at(-1) || "home";
   if (state.page === "home") state.sellDraft = null;
   state.mapExpanded = false;
   render();
@@ -152,9 +157,10 @@ function posterImage(event, className = "") {
 
 function getListings() {
   const event = currentEvent();
-  let list = (event.listings || []).filter(item => item.qty >= selectedCount() && item.price >= Number(state.minPrice) && item.price <= Number(state.maxPrice));
+  let list = (even
+t.listings || []).filter(item => item.qty >= selectedCount() && item.price >= Number(state.minPrice) && item.price <= Number(state.maxPrice));
   if (state.section !== "All sections") list = list.filter(item => item.section === state.section);
-  if (state.classFilter === "premium") list = list.filter(item => ["VVIP", "VIP"].includes(item.section));
+  if (state.classFilter === "premium") list = list.filter(item => /^(VVIP|VIP)/.test(item.section));
   if (state.classFilter === "value") list = list.filter(item => /^(PS|CAT|FLOOR)/.test(item.section) || item.section === "GA");
   if (state.classFilter === "instant") list = list.filter(item => item.badges.some(badge => badge.toLowerCase().includes("instant")));
   if (state.sort === "price") list = list.sort((a, b) => a.price - b.price);
@@ -203,50 +209,76 @@ function selectShowForTickets(show) {
   render(); refreshListings();
   requestAnimationFrame(() => $("#market")?.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
+const makeBlock = (d, label, x, y) => ({ d, label, x, y });
 const ARENA_ZONES = {
-  VVIP: { label: [260, 107], paths: ["M211 88 Q260 77 309 88 L302 128 Q260 119 218 128 Z"] },
-  VIP: { label: [175, 120], paths: ["M145 96 Q174 83 203 89 L213 130 Q180 138 153 156 Z", "M375 96 Q346 83 317 89 L307 130 Q340 138 367 156 Z"] },
-  PS1: { label: [194, 166], paths: ["M161 148 Q187 132 218 132 L230 178 Q198 183 174 199 Z", "M359 148 Q333 132 302 132 L290 178 Q322 183 346 199 Z"] },
-  PS2: { label: [260, 205], paths: ["M185 190 Q260 174 335 190 L350 229 Q260 216 170 229 Z"] },
-  PS3: { label: [143, 203], paths: ["M105 183 Q132 164 158 158 L173 207 Q145 220 122 240 Z", "M415 183 Q388 164 362 158 L347 207 Q375 220 398 240 Z"] },
-  PS4: { label: [260, 253], paths: ["M75 233 Q101 213 119 208 L136 256 Q116 275 95 286 Z", "M445 233 Q419 213 401 208 L384 256 Q404 275 425 286 Z", "M145 244 Q260 223 375 244 L389 281 Q260 263 131 281 Z"] },
+  VVIP: { blocks: [makeBlock("M325 79h70v34h-70z", "VIP", 360, 101), makeBlock("M325 116h70v28h-70z", "VVIP", 360, 134)] },
+  VIP: { blocks: [makeBlock("M287 79h33v65h-33z", "201", 303, 113), makeBlock("M400 79h33v65h-33z", "101", 416, 113), makeBlock("M250 103l32-18v62l-32 16z", "208", 266, 132), makeBlock("M438 85l32 18v60l-32-16z", "108", 454, 132)] },
+  PS1: { blocks: [makeBlock("M222 126l25-20 28 55-28 15z", "215", 250, 157), makeBlock("M470 106l25 20-25 50-28-15z", "115", 470, 157), makeBlock("M253 178l29-12 25 45-32 14z", "222", 278, 202), makeBlock("M472 166l29 12-22 47-32-14z", "122", 478, 202)] },
+  PS2: { blocks: [makeBlock("M160 185l64-45 21 50-59 43z", "201", 194, 192), makeBlock("M576 185l-64-45-21 50 59 43z", "128", 526, 192), makeBlock("M191 238l52-33 18 47-47 34z", "207", 224, 268), makeBlock("M545 238l-52-33-18 47 47 34z", "134", 516, 268)] },
+  PS3: { blocks: [makeBlock("M120 219l40-29 23 50-38 31z", "228", 140, 248), makeBlock("M616 219l-40-29-23 50 38 31z", "101", 580, 248), makeBlock("M157 284l41-30 27 45-42 30z", "223", 178, 312), makeBlock("M579 284l-41-30-27 45 42 30z", "141", 565, 312)] },
+  PS4: { blocks: [makeBlock("M82 257l31-25 30 43-32 27z", "234", 105, 284), makeBlock("M654 257l-31-25-30 43 32 27z", "143", 615, 284), makeBlock("M123 326l36-28 33 39-37 30z", "250", 157, 350), makeBlock("M613 326l-36-28-33 39 37 30z", "149", 603, 350), makeBlock("M204 370l37-30 32 32-38 30z", "260", 219, 389), makeBlock("M532 370l-37-30-32 32 38 30z", "153", 513, 389)] },
 };
-const UNIFI_ZONES = {
-  VVIP: { label: [350, 153], paths: ["M289 127 L411 127 L431 169 L269 169 Z"] },
-  VIP: { label: [350, 193], paths: ["M270 174 L430 174 L440 212 L260 212 Z"] },
-  PS1: { label: [178, 184], paths: ["M117 148 L247 169 L236 216 L110 199 Z", "M583 148 L453 169 L464 216 L590 199 Z"] },
-  PS2: { label: [350, 323], paths: ["M221 284 Q350 307 479 284 L469 331 Q350 352 231 331 Z"] },
-  PS3: { label: [178, 116], paths: ["M112 111 Q150 73 212 73 L258 116 L245 155 L116 135 Z", "M588 111 Q550 73 488 73 L442 116 L455 155 L584 135 Z"] },
-  PS4: { label: [164, 253], paths: ["M101 211 L226 230 L215 281 Q154 290 105 258 Z", "M599 211 L474 230 L485 281 Q546 290 595 258 Z"] },
-  GA: { label: [350, 245], paths: ["M264 217 L436 217 L445 274 L255 274 Z"] },
+const AXIATA_ZONES = {
+  "V
+IP GOLD (STANDING)": { blocks: [makeBlock("M235 91l65-20 22 42-75 25z", "GOLD PIT A", 273, 111), makeBlock("M565 91l-65-20-22 42 75 25z", "GOLD PIT B", 527, 111)] },
+  "VIP GOLD (SEATED)": { blocks: [makeBlock("M332 73h136v38H332z", "GOLD 101–103", 400, 97)] },
+  "VIP SILVER (STANDING)": { blocks: [makeBlock("M275 160h87v42h-87z", "SILVER PIT A", 318, 186), makeBlock("M438 160h87v42h-87z", "SILVER PIT B", 482, 186)] },
+  "VIP SILVER (SEATED)": { blocks: [makeBlock("M179 110l46-23 39 64-57 29z", "SILVER 201–204", 222, 145), makeBlock("M621 110l-46-23-39 64 57 29z", "SILVER 205–208", 578, 145)] },
+  "CAT 1": { blocks: [makeBlock("M300 211h58v43h-58z", "301", 329, 238), makeBlock("M362 211h76v43h-76z", "302", 400, 238), makeBlock("M442 211h58v43h-58z", "303", 471, 238), makeBlock("M300 258h58v38h-58z", "304", 329, 282), makeBlock("M362 258h76v38h-76z", "305", 400, 282), makeBlock("M442 258h58v38h-58z", "306", 471, 282)] },
+  "CAT 2 (STANDING)": { blocks: Array.from({ length: 16 }, (_, i) => { const x = 318 + (i % 4) * 42, y = 319 + Math.floor(i / 4) * 20; return makeBlock(`M${x} ${y}h38v16h-38z`, `B${i + 1}`, x + 19, y + 11); }) },
+  "CAT 3": { blocks: [makeBlock("M119 176l53-17 38 54-49 31z", "307", 158, 215), makeBlock("M681 176l-53-17-38 54 49 31z", "308", 642, 215), makeBlock("M165 252l51-28 33 49-50 33z", "309", 207, 278), makeBlock("M635 252l-51-28-33 49 50 33z", "310", 593, 278)] },
+  "CAT 4": { blocks: [makeBlock("M86 233l30-36 39 52-33 35z", "311", 116, 265), makeBlock("M714 233l-30-36-39 52 33 35z", "312", 684, 265), makeBlock("M128 307l37-28 37 45-38 29z", "313", 165, 337), makeBlock("M672 307l-37-28-37 45 38 29z", "314", 635, 337)] },
+  "CAT 5": { blocks: [makeBlock("M125 86l47-17 38 48-47 29z", "401", 161, 114), makeBlock("M675 86l-47-17-38 48 47 29z", "402", 639, 114), makeBlock("M79 146l39-26 34 54-42 27z", "403", 113, 176), makeBlock("M721 146l-39-26-34 54 42 27z", "404", 687, 176)] },
+  "CAT 6 (RESTRICTED VIEW)": { blocks: [makeBlock("M67 207l27-30 32 52-28 32z", "405 RV", 94, 236), makeBlock("M733 207l-27-30-32 52 28 32z", "406 RV", 706, 236), makeBlock("M98 287l30-27 34 43-32 29z", "407 RV", 128, 319)] },
+  "CAT 7 (RESTRICTED VIEW)": { blocks: [makeBlock("M702 287l-30-27-34 43 32 29z", "408 RV", 672, 319), makeBlock("M146 350l38-28 38 39-39 29z", "409 RV", 184, 377), makeBlock("M654 350l-38-28-38 39 39 29z", "410 RV", 616, 377)] },
 };
-const STADIUM_ZONES = {
-  "FLOOR A": { label: [278, 256], paths: ["M232 216 L313 216 L313 295 L232 295 Z"] },
-  "FLOOR B": { label: [380, 256], paths: ["M318 216 L442 216 L442 295 L318 295 Z"] },
-  "FLOOR C": { label: [482, 256], paths: ["M447 216 L528 216 L528 295 L447 295 Z"] },
-  "CAT 1": { label: [176, 158], paths: ["M106 220 C102 159 146 111 220 82 L249 127 C198 148 165 180 161 222 Z"] },
-  "CAT 2": { label: [584, 158], paths: ["M654 220 C658 159 614 111 540 82 L511 127 C562 148 595 180 599 222 Z"] },
-  "CAT 3": { label: [303, 80], paths: ["M224 80 C270 53 325 42 372 42 L372 94 C324 94 282 105 251 127 Z"] },
-  "CAT 4": { label: [457, 80], paths: ["M536 80 C490 53 435 42 388 42 L388 94 C436 94 478 105 509 127 Z"] },
-  "CAT 5": { label: [380, 380], paths: ["M247 365 C290 393 337 408 380 408 C423 408 470 393 513 365 L480 326 C448 348 416 361 380 361 C344 361 312 348 280 326 Z"] },
-  "CAT 6": { label: [140, 286], paths: ["M102 229 C106 277 129 319 166 350 L213 315 C185 291 169 259 165 226 Z"] },
-  "CAT 7": { label: [620, 286], paths: ["M658 229 C654 277 631 319 594 350 L547 315 C575 291 591 259 595 226 Z"] },
-  "CAT 8": { label: [222, 358], paths: ["M169 353 C195 374 218 389 246 399 L273 350 L220 319 Z"] },
-  "CAT 9": { label: [538, 358], paths: ["M591 353 C565 374 542 389 514 399 L487 350 L540 319 Z"] },
-};
+
+function ellipseBlock(cx, cy, rxOuter, ryOuter, rxInner, ryInner, start, end) {
+  const point = (rx, ry, angle) => [cx + rx * Math.cos(angle), cy + ry * Math.sin(angle)];
+  const a = point(rxOuter, ryOuter, start), b = point(rxOuter, ryOuter, end), c = point(rxInner, ryInner, end), d = point(rxInner, ryInner, start);
+  return `M${a[0].toFixed(1)} ${a[1].toFixed(1)} A${rxOuter} ${ryOuter} 0 0 1 ${b[0].toFixed(1)} ${b[1].toFixed(1)} L${c[0].toFixed(1)} ${c[1].toFixed(1)} A${rxInner} ${ryInner} 0 0 0 ${d[0].toFixed(1)} ${d[1].toFixed(1)} Z`;
+}
+function makeStadiumZones() {
+  const zones = Object.fromEntries(VENUE_SECTIONS["tm-stadium-nasional"].filter(name => name.startsWith("CAT")).map(name => [name, { blocks: [] }]));
+  [[1, 310, 194, 238, 143, ["CAT 1", "CAT 2", "CAT 3"]], [2, 352, 225, 311, 194, ["CAT 4", "CAT 5", "CAT 6"]], [3, 383, 250, 352, 225, ["CAT 7", "CAT 8", "CAT 9"]]].forEach(([level, rxO, ryO, rxI, ryI, categories]) => {
+    const count = 32;
+    for (let i = 0; i < count; i++) {
+      const mid = -Math.PI / 2 + (i + .5) * Math.PI * 2 / count;
+      const delta = Math.abs((((mid + Math.PI / 2 + Math.PI * 3) % (Math.PI * 2)) - Math.PI));
+      const cat = categories[delta < .95 ? 0 : delta < 2.05 ? 1 : 2];
+      const labelPoint = [400 + (rxO + rxI) / 2 * Math.cos(mid), 315 + (ryO + ryI) / 2 * Math.sin(mid)];
+      zones[cat].blocks.push(makeBlock(ellipseBlock(400, 315, rxO, ryO, rxI, ryI, -Math.PI / 2 + i * Math.PI * 2 / count, -Math.PI / 2 + (i + 1) * Math.PI * 2 / count), String(level * 100 + i + 1), labelPoint[0], labelPoint[1]));
+    }
+  });
+  zones["FLOOR A"] = { blocks: [] }; zones["FLOOR B"] = { blocks: [] }; zones["FLOOR C"] = { blocks: [] };
+  ["FLOOR A", "FLOOR B"].forEach((name, side) => {
+    for (let i = 0; i < 16; i++) {
+      const x = (side ? 416 : 248) + (i % 4) * 35, y = 257 + Math.floor(i / 4) * 29;
+      zones[name].blocks.push(makeBlock(`M${x} ${y}h31v25h-31z`, `${side ? "B" : "A"}${i + 1}`, x + 15.5, y + 16));
+    }
+  });
+  for (let i = 0; i < 3; i++) { const x = 366 + i * 23; zones["FLOOR C"].blocks.push(makeBlock(`M${x} 376h20v19h-20z`, `C${i + 1}`, x + 10, 389)); }
+  return zones;
+}
+const STADIUM_ZONES = makeStadiumZones();
 
 function sectionMap() {
   const event = currentEvent();
   if (event.venueKey === "unifi-arena") return unifiArenaMap(event);
   if (event.venueKey === "tm-stadium-nasional") return nationalStadiumMap(event);
-  return `<div class="venue-map arena-map"><svg class="arena-map-svg" viewBox="0 0 520 330" role="group" aria-label="Interactive Arena of Stars venue map"><defs><linearGradient id="arena-stage" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#312039"/><stop offset=".5" stop-color="#8055aa"/><stop offset="1" stop-color="#312039"/></linearGradient></defs><path class="arena-bowl" d="M59 100 Q260 12 461 100 L490 288 Q260 344 30 288 Z"/><path class="arena-row" d="M90 126 Q260 45 430 126M73 167 Q260 92 447 167M56 211 Q260 143 464 211M43 255 Q260 196 477 255"/><g class="stage-block"><path d="M168 26 Q260 16 352 26 L342 67 Q260 60 178 67 Z"/><text x="260" y="50" text-anchor="middle">STAGE</text></g>${Object.entries(ARENA_ZONES).map(([name]) => mapSection(name)).join("")}<g class="arena-gates"><text x="92" y="311">GATE A</text><text x="260" y="311">GATE B</text><text x="428" y="311">GATE C</text></g></svg><div class="map-footnote">Arena of Stars · illustrative zone map</div></div>`;
+  return `<div class="venue-map arena-map genting-map"><svg class="arena-map-svg" viewBox="0 0 720 470" role="group" aria-label="Interactive Genting Arena of Stars seating map"><defs><linearGradient 
+id="arena-stage" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#312039"/><stop offset=".5" stop-color="#8055aa"/><stop offset="1" stop-color="#312039"/></linearGradient></defs><path class="arena-bowl" d="M62 132 Q360 8 658 132 L688 386 Q360 470 32 386 Z"/><path class="arena-row" d="M95 156 Q360 44 625 156M77 209 Q360 108 643 209M57 266 Q360 175 663 266M43 324 Q360 248 677 324M37 372 Q360 322 683 372"/><g class="stage-block"><path d="M270 29 Q360 19 450 29 L440 67 Q360 61 280 67 Z"/><text x="360" y="51" text-anchor="middle">STAGE</text></g>${Object.entries(ARENA_ZONES).map(([name]) => mapSection(name)).join("")}<g class="arena-gates"><text x="120" y="430">GATE C</text><text x="360" y="450">GATE B</text><text x="600" y="430">GATE A</text></g><g class="arena-pillar"><circle cx="360" cy="363" r="10"/><text x="360" y="367" text-anchor="middle">P</text></g></svg><div class="map-footnote">Arena of Stars · numbered seating blocks · schematic</div></div>`;
 }
 
 function mapZoneButton(name, zone, event = currentEvent()) {
   const active = state.section === name;
   const available = event.listings?.some(item => item.section === name);
-  const status = available ? "Sample tickets listed" : "No sample listings";
-  return `<g class="seat-zone ${active ? "zone-active" : ""} ${available ? "zone-available" : "zone-empty"}" data-action="section" data-section="${esc(name)}" role="button" tabindex="0" aria-pressed="${active}" aria-label="${esc(name)}, ${status}"><title>${esc(name)} · ${status}</title>${zone.paths.map(path => `<path d="${path}"/>`).join("")}<text x="${zone.label[0]}" y="${zone.label[1]}" text-anchor="middle">${esc(name)}</text></g>`;
+  const listings = (event.listings || []).filter(item => item.section === name);
+  const lowest = listings.length ? Math.min(...listings.map(item => item.price)) : null;
+  const tier = Math.max(0, (event.sections || []).indexOf(name));
+  const priceLabel = lowest == null ? "No sample offers" : `from RM ${Number(lowest).toLocaleString("en-MY")}`;
+  const blocks = zone.blocks || (zone.paths || []).map((d, index) => ({ d, label: index ? "" : name, x: zone.label?.[0] || 0, y: zone.label?.[1] || 0 }));
+  return `<g class="seat-zone tier-${tier % 11} ${active ? "zone-active" : ""} ${available ? "zone-available" : "zone-empty"}" data-action="section" data-section="${esc(name)}" role="button" tabindex="0" aria-pressed="${active}" aria-label="${esc(name)}, ${priceLabel}"><title>${esc(name)} · ${priceLabel} · click to filter tickets</title>${blocks.map(block => `<path d="${block.d}"/>${block.label ? `<text x="${block.x}" y="${block.y}" text-anchor="middle">${esc(block.label)}</text>` : ""}`).join("")}</g>`;
 }
 
 function mapSection(name) {
@@ -254,14 +286,24 @@ function mapSection(name) {
 }
 
 function unifiArenaMap(event) {
-  const zones = Object.keys(UNIFI_ZONES).filter(name => event.sections.includes(name)).map(name => mapZoneButton(name, UNIFI_ZONES[name], event)).join("");
-  return `<div class="venue-map arena-map unifi-map"><svg class="arena-map-svg" viewBox="0 0 700 410" role="group" aria-label="Interactive Axiata Arena concert seating map"><rect class="unifi-bowl" x="65" y="61" width="570" height="306" rx="132"/><rect class="unifi-ring" x="95" y="84" width="510" height="260" rx="112"/><rect class="unifi-floor" x="222" y="184" width="256" height="123" rx="9"/><path class="unifi-centerline" d="M222 245H478"/><g class="unifi-stage"><path d="M290 45h120v28H290z"/><text x="350" y="64" text-anchor="middle">STAGE</text></g><g class="unifi-sections">${zones}</g><text class="unifi-floor-label" x="350" y="298" text-anchor="middle">INDOOR ARENA FLOOR</text></svg><div class="map-footnote">Axiata Arena · compact indoor bowl · schematic concert layout</div></div>`;
+  const zones = Object.keys(AXIATA_ZONES).filter(name => event.sections.includes(name)).map(name => mapZoneButton(name, AXIATA_ZONES[name], event)).join("");
+  return `<div class="venue-map arena-map unifi-map"><svg class="arena-map-svg" viewBox="0 0 800 470" role="group" aria-label="Interactive Axiata Arena numbered concert seating map"><rect class="unifi-bowl" x="45" y="48" width="710" height="386" rx="180"/><rect class="unifi-ring" x="77" y="70" width="646" height="342" rx="160"/><path class="unifi-row" d="M102 134 Q400 45 698 134M79 205 Q400 115 721 205M66 276 Q400 190 734 276M75 348 Q400 280 725 348"/><g class="unifi-stage"><path d="M335 24h130v37H335z"/><text x="400" y="48" text-anchor="middle">STAGE</text></g><g class="unifi-sections">${zones}</g><text class="unifi-floor-label" x="400" y="411" text-anchor="middle">MAIN FLOOR · A1–A16 / B1–B16</text><g class="unifi-gates"><text x="115" y="455">GATE A</text><text x="400" y="455">GATE B</text><text x="685" y="455">GATE C</text></g></svg><div class="map-footnote">Axiata Arena · numbered bowl blocks and standing pits · schematic</div></div>`;
 }
 
 function nationalStadiumMap(event) {
-  const zones = Object.keys(STADIUM_ZONES).filter(name => event.sections.includes(name)).map(name => mapZoneButton(name, STADIUM_ZONES[name], event)).join("");
-  const stageMarkup = event.stageLayout === "360" ? `<g class="stadium-stage stadium-stage-360"><circle cx="380" cy="239" r="28"/><text x="380" y="243" text-anchor="middle">360°</text></g>` : `<g class="stadium-stage"><path d="M330 151h100v28H330z"/><text x="380" y="170" text-anchor="middle">STAGE</text></g>`;
-  return `<div class="venue-map arena-map national-map"><svg class="arena-map-svg" viewBox="0 0 760 470" role="group" aria-label="Interactive TM Stadium Nasional Bukit Jalil three-tier seating map"><ellipse class="stadium-outline" cx="380" cy="237" rx="347" ry="211"/><ellipse class="stadium-tier stadium-tier-outer" cx="380" cy="237" rx="315" ry="184"/><ellipse class="stadium-tier stadium-tier-mid" cx="380" cy="237" rx="277" ry="153"/><ellipse class="stadium-track" cx="380" cy="237" rx="232" ry="120"/><rect class="stadium-field" x="199" y="164" width="362" height="151" rx="7"/><path class="stadium-field-lines" d="M199 239.5H561M380 164V315"/><circle class="stadium-field-lines" cx="380" cy="239" r="30"/><g class="stadium-zones">${zones}</g>${stageMarkup}<text class="stadium-level level-one" x="380" y="103" text-anchor="middle">LEVEL 1</text><text class="stadium-level level-two" x="380" y="71" text-anchor="middle">LEVEL 2</text><text class="stadium-level level-three" x="380" y="42" text-anchor="middle">LEVEL 3</text><g class="stadium-gates"><text x="95" y="408">GATE A</text><text x="380" y="430">GATE B</text><text x="665" y="408">GATE C</text></g></svg><div class="map-footnote">TM Stadium Nasional · 3-tier outdoor oval · schematic concert layout</div></div>`;
+  const ringZones = Object.keys(STADIUM_ZONES).filter(name => name.startsWith("CAT") && event.sections.includes(name)).map(name => mapZoneButton(name, STADIUM_ZONES[name], event)).join("");
+  const floorZones = Object.keys(STADIUM_ZONES).filter(name => name.startsWith("FLOOR") && event.sections.includes(name)).map(name => mapZoneButton(name, STADIUM_ZONES[name], event)).join("");
+  const stageMarkup = event.stageLayout === "360" ? `<g class="stadium-stage stadium-stage-360"><circle cx="400" cy="317" r="29"/><text x="400" y="321" text-anchor="middle">360°</text></g>` : `<g class="stadium-stage"><path d="M342 216h116v30H342z"/><text x="400" y="236" text-anchor="middle">STAGE</text></g>`;
+  return `<div class="venue-map arena-map national-map"><svg class="arena-map-svg" viewBox="0 0 800 570" role="group" aria-label="Interactive TM Stadium Nasional Bukit Jalil numbered seating map"><ellipse class="stadium-outline" cx="400" cy="315" rx="383" ry="249"/><ellipse class="stadium-track" cx="400" cy="315" rx="225" ry="135"/><g class="stadium-zones">${ringZones}</g><rect class="stadium-field" x="238" y="254" width="324" height="126" rx="8"/><path class="stadium-field-lines" d="M238 317H562M400 254V380"/><circle class="stadium-field-lines" cx="400" cy="317" r="25"/><g class="stadium-floor-zones">${floorZones}</g>${stageMarkup}<text class="stadium-level level-one" x="400" y="138" text-anchor="middle">LEVEL 1 · 101–132</text><text class="stadium-level level-two" x="400" y="101" text-anchor="middle">LEVEL 2 · 201–232</text><text class="stadium-level level-three" x="400"
+ y="65" text-anchor="middle">LEVEL 3 · 301–332</text><g class="stadium-gates"><text x="91" y="430">GATE A</text><text x="400" y="536">GATE B</text><text x="709" y="430">GATE C</text><text x="202" y="487">GATE D</text><text x="598" y="487">GATE E</text></g></svg><div class="map-footnote">TM Stadium Nasional · numbered 100 / 200 / 300 level blocks · schematic</div></div>`;
+}
+
+function mapPriceLegend(event) {
+  return `<div class="map-price-legend" aria-label="Zone prices">${(event.sections || []).map((section, index) => {
+    const offers = (event.listings || []).filter(item => item.section === section);
+    const price = offers.length ? Math.min(...offers.map(item => item.price)) : null;
+    return `<button class="map-price-tier tier-${index % 11}" data-action="section" data-section="${esc(section)}" title="Filter tickets in ${esc(section)}"><i></i><span>${esc(section)}</span><strong>${price == null ? "No offers" : `RM ${Number(price).toLocaleString("en-MY")}`}</strong></button>`;
+  }).join("")}</div>`;
 }
 function listingCard(item, index) {
   const estimated = item.price * selectedCount();
@@ -272,7 +314,8 @@ function listingPanel(event) {
   const listings = getListings();
   const sectionOptions = ["All sections", ...(event.sections || VENUE_SECTIONS[event.venueKey] || VENUE_SECTIONS["arena-stars"])].map(section => `<option value="${esc(section)}" ${state.section === section ? "selected" : ""}>${esc(section)}</option>`).join("");
   const filters = TIERS.map(item => `<button class="filter-chip ${state.classFilter === item.id ? "filter-active" : ""}" data-action="class-filter" data-filter="${item.id}">${item.name}</button>`).join("");
-  return `<div class="market-grid"><section class="map-card ${state.mapExpanded ? "map-card-expanded" : ""}" role="${state.mapExpanded ? "dialog" : "region"}" aria-modal="${state.mapExpanded}" aria-label="${esc(event.venue)} ticket zones"><div class="card-heading"><div><span class="section-kicker">${esc(event.venue.toUpperCase())}</span><h2>Choose your zone</h2></div><button class="map-help" data-action="${state.mapExpanded ? "close-map" : "map-help"}" aria-label="${state.mapExpanded ? "Close map" : "Map information"}">${state.mapExpanded ? "×" : "?"}</button></div>${sectionMap()}<div class="map-legend"><span><i class="legend-dot dot-available"></i>Demo marketplace listings shown</span><span><i class="legend-dot dot-selected"></i>Selected zone</span><span><i class="legend-dot dot-none"></i>No sample listings</span></div>${!state.mapExpanded ? `<button class="clear-section map-expand-button" data-action="expand-map">Zoom in</button>` : ""}</section><button class="map-backdrop" data-action="close-map" aria-label="Close expanded venue map" ${state.mapExpanded ? "" : "hidden"}></button><section class="listings-column"><div class="listings-toolbar"><div><span class="section-kicker">${esc(event.name.toUpperCase())} · ${esc(event.venue.toUpperCase())}</span><h2>Tickets for this show</h2><p>${listings.length} demo listings · Prices shown per ticket</p></div><a class="official-link" href="${esc(event.source)}" target="_blank" rel="noopener">Official event info ↗</a></div><div class="filter-panel"><div class="filter-row"><label class="concert-filter"><span>Concert</span><select data-change="concert">${concertOptions(event)}</select></label><label class="date-filter"><span>Date</span><select data-change="date">${dateOptions(event)}</select></label><label class="quantity-filter"><span>Tickets</span><select data-change="quantity">${[1,2,3,4,5,6].map(n => `<option value="${n}" ${n === selectedCount() ? "selected" : ""}>${n}</option>`).join("")}</select></label><label class="section-filter"><span>Location</span><select data-change="section">${sectionOptions}</select></label><label class="sort-filter"><span>Sort by</span><select data-change="sort"><option value="recommended" ${state.sort === "recommended" ? "selected" : ""}>Recommended</option><option value="price" ${state.sort === "price" ? "selected" : ""}>Lowest price</option><option value="best" ${state.sort === "best" ? "selected" : ""}>Best view</option></select></label></div><div class="filter-chips">${filters}</div><div class="price-filter"><label>Price per ticket <strong>${money(state.minPrice)} – ${money(state.maxPrice)}</strong></label><div><input aria-label="Minimum price" type="range" min="0" max="2000" step="25" value="${state.minPrice}" data-change="min-price"><input aria-label="Maximum price" type="range" min="100" max="2000" step="25" value="${state.maxPrice}" data-change="max-price"></div></div></div><div class="demo-notice"><span>i</span><p><strong>Sample marketplace listings</strong> — prices and availability here are demo data. Connect your ticket inventory API to show live offers.</p></div><div class="listing-header"><strong>${listings.length} listings</strong><span>Price includes estimated fees</span></div><div class="listing-results">${listings.length ? listings.map(listingCard).join("") : `<div class="empty-listings"><strong>No tickets match these filters.</strong><span>Try another section or ticket type.</span><button data-action="clear-filters">Clear filters</button></div>`}</div></section></div>`;
+  return `<div class="market-grid"><section class="map-card ${state.mapExpanded ? "map-card-expanded" : ""}" role="${state.mapExpanded ? "dialog" : "region"}" aria-modal="${state.mapExpanded}" aria-label="${esc(event.venue)} ticket zones"><div class="card-heading"><div><span class="section-kicker">${esc(event.venue.toUpperCase())}</span><h2>Choose your zone</h2></div><button class="map-help" data-action="${state.mapExpanded ? "close-map" : "map-help"}" aria-label="${state.mapExpanded ? "Close map" : "Map information"}">${state.mapExpanded ? "×" : "?"}</button></div>${sectionMap()}${mapPriceLegend(event)}<div class="map-legend"><span><i class="legend-dot dot-available"></i>Listed zone · price-coded</span><span><i class="legend-dot dot-selected"></i>Selected zone</span><span><i class="legend-dot dot-none"></i>No sample offers</span></div>${!state.mapExpanded ? `<button class="clear-section map-expand-button" data-action="expand-map">Zoom in</button>` : ""}</section><button class="map-backdrop" data-action="close-map" aria-label="Close expanded venue map" ${state.mapExpanded ? "" : "hidden"}></button><section class="listings-column"><div class="listings-toolbar"><div><span class="section-kicker">${esc(event.name.toUpperCase())} · ${esc(event.venue.toUpperCase())}</span><h2>Tickets for this show</h2><p>${listings.length} demo listings · Prices shown per ticket</p></div><a class="official-link" href="${esc(event.source)}" target="_blank" rel="noopener">Official event info ↗</a></div><div class="filter-panel"><div class="filter-row"><label class="concert-filter"><span>Concert</span><select data-change="concert">${concertOptions(event)}</select></label><label class="date-filter"><span>Date</span><select data-change="date">${dateOptions(event)}</select></label><label class="quantity-filter"><span>Tickets</span><select data-change="quantity">${[1,2,3,4,5,6].map(n => `<option value="${n}" ${n === selectedCount() ? "selected" : ""}>${n}</option>`).join("")}</select></label><label class="section-filter"><span>Location</span><select data-change="section">${sectionOptions}</select></label><label class="sort-filter"><span>Sort by</span><select data-change="sort"><option value="recommended" ${state.sort === "recommended" ? "selected" : ""}>Recommended</option><option value="price" ${state.sort === "price" ? "selected" : ""}>Lowest price</option><option value="best" ${stat
+e.sort === "best" ? "selected" : ""}>Best view</option></select></label></div><div class="filter-chips">${filters}</div><div class="price-filter"><label>Price per ticket <strong>${money(state.minPrice)} – ${money(state.maxPrice)}</strong></label><div><input aria-label="Minimum price" type="range" min="0" max="2000" step="25" value="${state.minPrice}" data-change="min-price"><input aria-label="Maximum price" type="range" min="100" max="2000" step="25" value="${state.maxPrice}" data-change="max-price"></div></div></div><div class="demo-notice"><span>i</span><p><strong>Sample marketplace listings</strong> — prices and availability here are demo data. Connect your ticket inventory API to show live offers.</p></div><div class="listing-header"><strong>${listings.length} listings</strong><span>Price includes estimated fees</span></div><div class="listing-results">${listings.length ? listings.map(listingCard).join("") : `<div class="empty-listings"><strong>No tickets match these filters.</strong><span>Try another section or ticket type.</span><button data-action="clear-filters">Clear filters</button></div>`}</div></section></div>`;
 }
 
 function stepper() {
@@ -288,7 +331,8 @@ function reviewView(event) {
 
 function checkoutView(event) {
   if (state.receipt) return `<section class="receipt-card"><div class="receipt-success"><span>✓</span><div class="section-kicker">BOOKING CONFIRMED</div><h2>Your night is booked.</h2><p>Your e-ticket details are below.</p></div><div class="receipt-paper"><div class="receipt-paper-top">${logo(30)}<span>ECHO LIVE · E-TICKET</span></div><div class="receipt-ref"><span>BOOKING REFERENCE</span><strong>${esc(state.receipt.id || "Reference unavailable")}</strong></div><div class="receipt-grid"><div><small>EVENT</small><strong>${esc(state.receipt.eventName || event.name)}</strong></div><div><small>VENUE</small><strong>${esc(state.receipt.venue || event.venue)}</strong></div><div><small>DATE / TIME</small><strong>${esc(state.receipt.date || event.date)} · ${esc(state.receipt.time || event.time)}</strong></div><div><small>SECTION / ROW</small><strong>${esc(state.receipt.section || state.listing?.section)} · ${esc(state.receipt.row || state.listing?.row)}</strong></div><div><small>QUANTITY</small><strong>${Number(state.receipt.quantity || state.quantity)} tickets</strong></div><div><small>TOTAL</small><strong>${money(state.receipt.total ?? state.listing?.price * state.quantity)}</strong></div></div></div><div class="receipt-actions"><button class="secondary-btn" data-action="show-booking">Manage booking</button><button class="primary-btn" data-action="new-search">Explore more shows&nbsp; →</button></div></section>`;
-  const item = state.listing;
+  const item
+ = state.listing;
   if (!item) return `<section class="review-card"><h2>Choose a ticket first</h2><button class="primary-btn" data-action="step" data-step="1">Browse tickets →</button></section>`;
   return `<section class="checkout-card"><div class="checkout-heading"><div><span class="section-kicker">FINAL STEP</span><h2>Checkout</h2><p>You're one step away from a live night out.</p></div><span class="secure-pill">✓ Secure checkout</span></div><div class="checkout-layout"><form class="checkout-form" id="checkout-form"><h3>Ticket delivery</h3><label>Full name<input required name="customerName" value="${esc(state.name)}" placeholder="Name on the booking"></label><label>Email address<input required name="customerEmail" type="email" value="${esc(state.email)}" placeholder="you@example.com"></label><div class="idempotency-note"><span>Request protection</span><code>${esc(state.key)}</code><b>READY</b></div><button class="primary-btn checkout-submit" type="submit">Confirm booking · ${money(item.price * selectedCount())}</button><p class="demo-terms">Prototype checkout only — no payment is collected.</p></form><aside class="checkout-summary"><span class="section-kicker">ORDER SUMMARY</span><h3>${esc(event.name)}</h3><p>${esc(event.date)} · ${esc(event.venue)}</p><div class="summary-line"><span>${esc(item.section)} · Row ${esc(item.row)} × ${selectedCount()}</span><strong>${money(item.price * selectedCount())}</strong></div><div class="summary-line"><span>Estimated fees</span><strong>Included</strong></div><div class="summary-total"><span>Total</span><strong>${money(item.price * selectedCount())}</strong></div><div class="summary-note">Demo ticket details stay in this browser.</div></aside></div><button class="secondary-btn checkout-back" data-action="step" data-step="2">← Back to review</button></section>`;
 }
@@ -307,7 +351,8 @@ function sellView() {
   const draft = state.sellDraft || {};
   const selectedSection = selectedShow.sections.includes(draft.section) ? draft.section : selectedShow.sections[0];
   const sections = selectedShow.sections.map(section => `<option value="${esc(section)}" ${section === selectedSection ? "selected" : ""}>${esc(section)}</option>`).join("");
-  const rows = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(row => `<option ${row === draft.row ? "selected" : ""}>${row}</option>`).join("");
+  const rows = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(row => `<option ${row === draft.row ? "selected" : ""}>${row}</opti
+on>`).join("");
   return `<section class="sell-page"><div class="page-heading-layout">${backButton("go-home")}<div class="page-heading"><span class="section-kicker">SELL ON ECHO LIVE</span><h1>Make someone’s night.</h1><p>List your tickets for ${esc(selectedShow.venue)}.</p></div></div><div class="sell-layout"><form id="sell-form" class="sell-form"><div class="form-section-title"><span>01</span><div><h2>Ticket details</h2><p>Tell fans what you’re selling.</p></div></div><label>Concert<select name="eventId" data-change="sell-event" required>${events}</select></label><div class="form-fields-two"><label>Section<select name="section" required>${sections}</select></label><label>Row<select name="row" required>${rows}</select></label></div><div class="form-fields-two"><label>Seat numbers<input name="seats" value="${esc(draft.seats || "")}" required maxlength="30" placeholder="e.g. 5–6" autocomplete="off"></label><label>Quantity<input name="quantity" type="number" min="1" max="6" step="1" value="${esc(draft.quantity || "2")}" required></label></div><label>Price per ticket (RM)<input name="price" type="number" min="1" max="2000" step="1" value="${esc(draft.price || "")}" placeholder="e.g. 350" required></label><div class="form-section-title seller-contact-title"><span>02</span><div><h2>Seller contact</h2><p>Buyers won’t see your details on the listing.</p></div></div><label>Your name<input name="sellerName" value="${esc(draft.sellerName || profile.name)}" maxlength="80" required autocomplete="name"></label><label>Email address<input name="sellerEmail" type="email" value="${esc(draft.sellerEmail || profile.email)}" maxlength="120" required autocomplete="email" placeholder="you@example.com"></label><div class="local-save-note"><span>✓</span><p><strong>Instant demo listing</strong><br>Your ticket will appear in the marketplace and be saved on this device.</p></div><button class="primary-btn publish-button" type="submit">Publish tickets</button></form><aside class="sell-side-card"><span class="section-kicker">HOW IT WORKS</span><h2>List in a few steps.</h2><ol><li><span>1</span><div><strong>Add your seat details</strong><small>Choose the concert, section, row and seats.</small></div></li><li><span>2</span><div><strong>Set your asking price</strong><small>Enter a price for each ticket.</small></div></li><li><span>3</span><div><strong>Publish to the marketplace</strong><small>Your offer becomes available to fans right away.</small></div></li></ol><p class="sell-side-footnote">Demo listings stay in this browser’s local storage.</p></aside></div></section>`;
 }
 
@@ -319,7 +364,8 @@ function accountView() {
   const memberSince = new Date(profile.joinedAt || Date.now()).toLocaleDateString("en-MY", { month: "short", year: "numeric" });
   const bookingRows = bookings.length ? bookings.slice(0, 5).map(booking => `<article class="account-data-row"><div><strong>${esc(booking.eventName || booking.event || "Live event")}</strong><small>${esc(booking.date || "Date pending")} · ${esc(booking.section || "Tickets")} · ${Number(booking.quantity || 0)} ticket(s)</small></div><span class="booking-status ${["cancelled", "canceled"].includes(String(booking.status).toLowerCase()) ? "cancelled" : ""}">${esc(String(booking.status || "confirmed").toUpperCase())}</span><button class="account-inline-action" data-action="open-account-booking" data-id="${esc(booking.id || booking.bookingId || "")}">Details</button></article>`).join("") : `<div class="account-empty">No bookings yet. Your ticket purchases will appear here.</div>`;
   const listingRows = listings.length ? listings.map(listing => { const event = state.events.find(item => item.id === listing.eventId); return `<article class="account-data-row"><div><strong>${esc(event?.name || listing.eventName || "Live event")}</strong><small>${esc(listing.section)} · Row ${esc(listing.row)} · ${esc(listing.seats)} · ${Number(listing.qty)} available</small></div><strong class="account-listing-price">${money(listing.price)} <small>each</small></strong><button class="account-inline-action remove-listing-action" data-action="remove-listing" data-id="${esc(listing.id)}">Remove</button></article>`; }).join("") : `<div class="account-empty">No active listings. Use Sell to offer tickets to other fans.</div>`;
-  return `<section class="account-page"><div class="page-heading-layout">${backButton("go-home")}<div class="page-heading"><span class="section-kicker">YOUR ECHO LIVE ACCOUNT</span><h1>Profile &amp; activity</h1><p>Keep your contact details and ticket activity together.</p></div></div><div class="account-grid"><article class="profile-card"><div class="profile-identity"><div class="profile-avatar">${esc(initials || "EL")}</div><div><span class="section-kicker">LOCAL DEMO PROFILE</span><h2>${esc(profile.name || "Echo Live Member")}</h2><p>Member since ${esc(memberSince)}</p></div></div><form id="profile-form" class="profile-form"><label>Full name<input name="profileName" value="${esc(profile.name || "")}" maxlength="80" required autocomplete="name"></label><label>Email address<input name="profileEmail" type="email" value="${esc(profile.email || "")}" maxlength="120" autocomplete="email" placeholder="Add your email"></label><label>Phone number<input name="profilePhone" type="tel" value="${esc(profile.phone || "")}" maxlength="30" autocomplete="tel" placeholder="Add your phone number"></label><label>Region<input name="profileRegion" value="${esc(profile.region || "Malaysia")}" maxlength="60" autocomplete="country-name"></label><button class="primary-btn" type="submit">Save profile</button></form><p class="local-profile-note">Your profile is stored on this device for this demo.</p></article><div class="account-activity"><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">TICKET HISTORY</span><h2>Your bookings</h2></div><button class="account-inline-action" data-action="manage">Booking lookup</button></div>${bookingRows}</article><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">SELLER DASHBOARD</span><h2>Your listings</h2></div><button class="account-inline-action" data-action="sell">Add tickets</button></div>${listingRows}</article></div></div></section>`;
+  return `<section class="account-page"><div class="page-heading-layout">${backButton("go-home")}<div class="page-heading"><span class="section-kicker">YOUR ECHO LIVE ACCOUNT</span><h1>Profile &amp; activity</h1><p>Keep your contact details and ticket activity together.</p></div></div><div class="account-grid"><article class="profile-card"><div class="profile-identity"><div class="profile-avatar">${esc(initials || "EL")}</div><div><span class="section-kicker">LOCAL DEMO PROFILE</span><h2>${esc(profile.
+name || "Echo Live Member")}</h2><p>Member since ${esc(memberSince)}</p></div></div><form id="profile-form" class="profile-form"><label>Full name<input name="profileName" value="${esc(profile.name || "")}" maxlength="80" required autocomplete="name"></label><label>Email address<input name="profileEmail" type="email" value="${esc(profile.email || "")}" maxlength="120" autocomplete="email" placeholder="Add your email"></label><label>Phone number<input name="profilePhone" type="tel" value="${esc(profile.phone || "")}" maxlength="30" autocomplete="tel" placeholder="Add your phone number"></label><label>Region<input name="profileRegion" value="${esc(profile.region || "Malaysia")}" maxlength="60" autocomplete="country-name"></label><button class="primary-btn" type="submit">Save profile</button></form><p class="local-profile-note">Your profile is stored on this device for this demo.</p></article><div class="account-activity"><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">TICKET HISTORY</span><h2>Your bookings</h2></div><button class="account-inline-action" data-action="manage">Booking lookup</button></div>${bookingRows}</article><article class="account-panel"><div class="account-panel-heading"><div><span class="section-kicker">SELLER DASHBOARD</span><h2>Your listings</h2></div><button class="account-inline-action" data-action="sell">Add tickets</button></div>${listingRows}</article></div></div></section>`;
 }
 
 function adminAuditView(order) {
@@ -330,7 +376,8 @@ function adminAuditView(order) {
   const statusClass = ["verified", "mismatch", "pending"].includes(status) ? status : "unverified";
   const seats = Array.isArray(booking.seats) ? booking.seats.join(", ") : (booking.seats || booking.seatNumbers || booking.listingSnapshot?.seats || "Not recorded");
   const seatRelease = audit ? `<section class="admin-audit-result"><div class="admin-audit-heading"><div><span class="section-kicker">SEAT POOL CHECK</span><h3>Release audit</h3></div><span class="admin-audit-status ${statusClass}">${esc(statusLabel)}</span></div><p>${esc(audit.message || (status === "verified" ? "The backend reports that released seats match the expected inventory." : status === "mismatch" ? "The backend reports a difference between expected and released seats." : "The backend has not completed this inventory check."))}</p><div class="admin-facts"><div><small>EXPECTED SEATS</small><strong>${esc(audit.expectedSeatCount ?? audit.expectedSeats ?? booking.quantity ?? "—")}</strong></div><div><small>RELEASED SEATS</small><strong>${esc(audit.releasedSeatCount ?? audit.releasedSeats ?? "—")}</strong></div><div><small>AVAILABLE NOW</small><strong>${esc(audit.availableSeatCount ?? audit.availableSeats ?? "—")}</strong></div><div><small>CHECKED AT</small><strong>${esc(audit.verifiedAt || audit.checkedAt || "Not provided")}</strong></div></div></section>` : `<section class="admin-audit-result admin-audit-unverified"><div class="admin-audit-heading"><div><span class="section-kicker">SEAT POOL CHECK</span><h3>Release audit</h3></div><span class="admin-audit-status unverified">UNVERIFIED</span></div><p>No authoritative seat-pool audit was returned. A cancelled order alone does not prove that its seats are available again.</p></section>`;
-  return `<article class="admin-order-card"><div class="admin-order-heading"><div><span class="section-kicker">ORDER LOOKUP RESULT</span><h2>${esc(booking.eventName || booking.event || "Concert booking")}</h2></div><span class="booking-status ${["cancelled", "canceled", "expired", "timed_out"].includes(String(booking.status || "").toLowerCase()) ? "cancelled" : ""}">${esc(String(booking.status || "UNKNOWN").replaceAll("_", " ").toUpperCase())}</span></div><div class="admin-reference">Booking ID <strong>${esc(booking.id || booking.bookingId || state.adminQuery)}</strong></div><div class="admin-facts"><div><small>PAYMENT STATUS</small><strong>${esc(booking.paymentStatus || booking.payment_status || "Not provided")}</strong></div><div><small>HOLD EXPIRES</small><strong>${esc(booking.holdExpiresAt || booking.hold_expires_at || "Not provided")}</strong></div><div><small>CANCEL REASON</small><strong>${esc(booking.cancelReason || booking.cancel_reason || "—")}</strong></div><div><small>SECTION / ROW</small><strong>${esc(booking.section || "—")} · ${esc(booking.row || "—")}</strong></div><div><small>SEAT DETAILS</small><strong>${esc(seats)}</strong></div><div><small>QUANTITY / TOTAL</small><strong>${Number(booking.quantity || 0)} · ${money(booking.total)}</strong></div></div>${seatRelease}<div class="admin-result-source">${order.source === "local-demo" ? "Local demo record · this browser only" : "Admin API response"}</div></article>`;
+  return `<article class="admin-order-card"><div class="admin-order-heading"><div><span class="section-kicker">ORDER LOOKUP RESULT</span><h2>${esc(booking.eventName || booking.event || "Concert booking")}</h2></div><span class="booking-status ${["cancelled", "canceled", "expired", "timed_out"].includes(String(booking.status || "").toLowerCase()) ? "cancelled" : ""}">${esc(String(booking.status || "UNKNOWN").replaceAll("_", " ").toUpperCase())}</span></div><div class="admin-reference">Booking ID <strong>${esc(booking.id || booking.bookingId || state.adminQuery)}</strong></div><div class="admin-facts"><div><small>PAYMENT STATUS</small><strong>${esc(booking.paymentStatus || booking.payment_status || "Not provided")}</strong></div><div><small>HOLD EXPIRES</small><strong>${esc(booking.holdExpiresAt || booking.hold_expires_at || "Not provided")}</strong></div><div><small>CANCEL REASON</small><strong>${esc(booking.cancelReason || booking.cancel_reason || "—")}</strong></div><div><small>SECTION / ROW</small><strong>${esc(booking.section || "—")} · ${esc(booking.row || "—")}</strong></div><div><small>SEAT DETAILS</small><strong>${esc(seats)}</strong></div><div><small>QUANTITY / TOTAL</small><strong>${Number(booking.quantity || 0)} · ${money(booking.total)}</strong></div></div>${seatRelease}<div class="admin-result-source">${order.source === "local-demo" ? "Local demo
+ record · this browser only" : "Admin API response"}</div></article>`;
 }
 
 function adminView() {
@@ -342,7 +389,8 @@ function render() {
   document.body.classList.toggle("map-open", state.mapExpanded);
   root.innerHTML = `<div class="app-shell"><header class="topbar ${state.searchOpen ? "search-open" : ""}"><a class="brand" href="#top">${logo()}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><div class="top-actions"><label class="search-box"><span>⌕</span><input name="eventSearch" value="${esc(state.searchTerm)}" placeholder="Artist, event or venue" aria-label="Search shows"></label>${locationPicker()}<button class="sell-button" data-action="sell">Sell</button><button class="account-button" data-action="account" aria-label="Account and my bookings" title="Account"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.25"></circle><circle cx="12" cy="9" r="3"></circle><path d="M6.8 18.2c.7-2.7 2.7-4.2 5.2-4.2s4.5 1.5 5.2 4.2"></path></svg></button></div><button class="mobile-search" data-action="toggle-search" aria-label="Search">⌕</button></header><main id="top"><section class="event-hero"><img class="hero-photo" src="${esc(event.image)}" alt="${esc(event.imageAlt)}" decoding="async" fetchpriority="high" onerror="this.hidden=true"><div class="hero-shade"></div><div class="hero-inner"><div class="hero-event-copy"><div class="hero-tags"><span>${esc(event.tag)}</span><span class="live-tag">LIVE MUSIC</span></div><p class="hero-kicker">${esc(event.tour)}</p><h1>${esc(event.name)}</h1><p class="hero-meta">${esc(event.date)} <i></i> ${esc(event.venue)} <i></i> ${esc(event.area)}</p><p class="hero-time">${esc(event.time)} · ${esc(event.state === "SOLD OUT" ? "Official tickets sold out" : "Demo marketplace listings shown")}</p><a class="primary-btn hero-button" href="#market">Find tickets</a></div><div class="hero-poster-wrap">${posterImage(event, "hero-poster")}<span>OFFICIAL EVENT ARTWORK</span></div></div><div class="hero-bottom"><span><i class="live-dot"></i> ECHO LIVE PICKS</span><a href="${esc(event.source)}" target="_blank" rel="noopener">Official event details ↗</a></div></section>
       <section class="discovery" id="shows"><div class="discovery-head"><div><span class="section-kicker">UP NEXT · ALL VENUES</span><h2>Find your next live moment</h2><p>Live music across Resorts World Genting and Bukit Jalil.</p></div><button class="all-shows" data-action="toggle-all-shows">${state.showAllEvents ? "Show fewer shows" : "View all shows"}</button></div><div class="event-strip">${eventCards()}</div></section>
-      <section class="market-section" id="market"><div class="market-heading"><div><span class="section-kicker">TICKETS FOR ${esc(event.name.toUpperCase())}</span><h2>Pick a spot. Feel every song.</h2><p>${esc(event.venue)} · ${esc(event.area)}</p></div><div class="event-status ${event.state === "SOLD OUT" ? "sold-out" : ""}"><i></i>${esc(event.state)}</div></div>${stepper()}${state.step === 1 ? listingPanel(event) : ""}${state.step === 2 ? reviewView(event) : ""}${state.step === 3 ? checkoutView(event) : ""}${state.step === 4 ? bookingView() : ""}</section>
+      <section class="market-section" id="market"><div class="market-heading"><div><span class="section-kicker">TICKETS FOR ${esc(event.name.toUpperCase())}</span><h2>Pick a spot. Feel every song.</h2><p>${esc(event.venue)} · ${esc(event.area)}</p></div><div class="event-status ${event.state === "SOLD OUT" ? "sold-out" : ""}"><i></i>${esc(event.state)}</div></div>${stepper()}
+${state.step === 1 ? listingPanel(event) : ""}${state.step === 2 ? reviewView(event) : ""}${state.step === 3 ? checkoutView(event) : ""}${state.step === 4 ? bookingView() : ""}</section>
     </main><footer class="site-footer" id="footer"><a class="brand footer-brand" href="#top">${logo(32)}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><span>© ${new Date().getFullYear()} ECHO LIVE. All rights reserved.</span><div><a href="#footer">Help center</a><a href="#footer">Terms</a><a href="https://youtu.be/dQw4w9WgXcQ?si=SttXnPRIuduZt2Mv" target="_blank" rel="noopener">Privacy</a><button class="footer-admin-link" data-action="admin">Admin</button></div></footer>${state.toast ? `<div class="toast" role="status"><span>!</span>${esc(state.toast)}<button data-action="dismiss" aria-label="Dismiss">×</button></div>` : ""}</div>`;
   const main = $("#top", root);
   if (state.page === "sell") main.innerHTML = sellView();
@@ -410,7 +458,8 @@ function saveProfile(form) {
 root.addEventListener("click", async event => {
   const button = event.target.closest("[data-action]");
   if (!button) return;
-  const action = button.dataset.action;
+  const action = bu
+tton.dataset.action;
   if (action === "event") {
     state.locationOpen = false;
     selectShowForTickets(state.events.find(item => item.id === button.dataset.id));
@@ -471,7 +520,8 @@ root.addEventListener("keydown", event => {
     selectShowForTickets(state.events.find(item => item.id === target.value));
     return;
   }
-  if (target.dataset.change === "sell-event") {
+  if (target.dataset.chang
+e === "sell-event") {
     const show = state.events.find(item => item.id === target.value);
     const sectionSelect = $('[name="section"]', root);
     if (show && sectionSelect) sectionSelect.innerHTML = show.sections.map(section => `<option value="${esc(section)}">${esc(section)}</option>`).join("");
@@ -551,52 +601,9 @@ async function findAdminOrder() {
   try {
     if (DEMO_MODE) {
       const booking = getBookings().find(item => String(item.id || item.bookingId || "").toLowerCase() === id.toLowerCase());
-      if (!booking) throw new Error("No matching order was found in this browser’s demo data.");
-      state.adminOrder = { booking, audit: null, source: "local-demo" };
-    } else {
-      const data = await request(`/admin/orders/${encodeURIComponent(id)}/audit`);
-      const booking = data.booking || data.order || data;
-      const audit = data.seatReleaseAudit || data.seat_release_audit || data.releaseAudit || data.audit || null;
-      state.adminOrder = { booking, audit, source: "api" };
-    }
-  } catch (error) {
-    state.adminError = error.status === 404 ? "No order or seat audit was found for that booking ID." : (error.message || "Order lookup failed. Please try again.");
-  }
-  state.adminBusy = false; render();
-}
-
-async function cancelBooking() {
-  const id = state.booking?.id || state.booking?.bookingId || state.bookingId.trim();
-  if (!id || !state.booking) return;
-  state.cancelBusy = true; render();
-  try {
-    let result;
-    if (DEMO_MODE) {
-      const saved = getBookings().map(item => item.id === id ? { ...item, status: "cancelled" } : item);
-      localStorage.setItem("echo-ticket-orders", JSON.stringify(saved)); result = saved.find(item => item.id === id);
-      const ownerEvent = state.events.find(item => item.id === result?.eventId);
-      if (ownerEvent && result?.listingSnapshot) {
-        const snapshot = result.listingSnapshot;
-        const current = ownerEvent.listings.find(item => item.id === snapshot.id);
-        if (snapshot.sellerListing) {
-          const restoredQty = Number(result.quantity || 1);
-          if (current) current.qty += restoredQty;
-          else ownerEvent.listings.push({ ...snapshot, qty: restoredQty });
-          const saved = getSellerListings();
-          const stored = saved.find(item => item.id === snapshot.id);
-          if (stored) stored.qty += restoredQty;
-          else saved.push({ ...snapshot, qty: restoredQty });
-          saveSellerListings(saved);
-        } else if (!current) ownerEvent.listings.push(snapshot);
-      }
-    } else result = await request(`/bookings/${encodeURIComponent(id)}`, { method: "DELETE" });
-    state.booking = { ...state.booking, ...result, status: result?.status || "cancelled" };
-    state.toast = "Your booking has been cancelled.";
-  } catch (error) { state.toast = error.message || "Cancellation failed. Please try again."; }
-  state.cancelBusy = false; render();
-}
-
-restoreSellerListings();
-render();
-loadEvents();
-
+      if (!booking) throw new Error("No matc
+MethodInvocationException: 
+Line |
+   2 |  ([System.IO.File]::ReadAllText('client/app.js')).Substring(80000,2609 …
+     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string. (Parameter 'length')"
