@@ -285,4 +285,5 @@ body.map-open{overflow:hidden}
   .admin-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
   .admin-order-heading h2{font-size:19px}
 }
+.map-card-expanded .map-help{width:46px;height:46px;padding:0;font-size:34px;line-height:1;font-weight:800;border-radius:50%}
 
