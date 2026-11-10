@@ -20,61 +20,43 @@ Set `window.EVENT_API_BASE_URL` in [`client/config.js`](client/config.js) to the
 
 HTTP 409 booking conflicts show the server message, return the customer to ticket selection, and refresh available listings.
 
+## Holds, timeout release, and admin audit
 
----
+The current client is a prototype. Demo orders are saved in one browser and are confirmed immediately; there is no payment flow, shared seat pool, or automatic timeout release in this repository. Closing a browser tab cannot safely release a live hold by itself.
 
-## Notification Service (Member 3)
+For a live system, the backend should atomically hold the selected seats when checkout starts, assign a configurable expiry (for example, 10 minutes), and release unpaid holds with a server-side expiry worker. The worker must continue even if the buyer closes the page. Ticket listings should include the remaining quantity and explicit section, row, and seat labels so later buyers can select from the inventory still available. On HTTP 409, the client already refreshes the listing data.
 
-### 1. Requirements & Setup
-- Python 3.10+
-- Dependencies:
-  ```bash
-  pip install fastapi uvicorn pydantic httpx
+The Admin link opens an order lookup. In demo mode, it can search only orders saved in the current browser and deliberately marks seat-pool status as unverified. With an API configured, it requests:
 
-## 2. How to Run Independently
+- `GET /admin/orders/{bookingId}/audit`
 
-To start the Notification Service on port `5003`:
-
-```bash
-python services/notification-service/app.py
-```
-
-Expected terminal output:
-
-```text
-INFO:     Started server process
-INFO:     Uvicorn running on http://0.0.0.0:5003 (Press CTRL+C to quit)
-```
-
-## 3. API Contract
-
-* **Endpoint:** `POST /notifications`
-* **Port:** `5003`
-* **Request Body:**
+The endpoint should be protected by administrator authentication and return an order plus its authoritative release audit, for example:
 
 ```json
 {
-  "booking_id": "B104",
-  "user_email": "user@example.com",
-  "seat_ids": ["C4"],
-  "event_type": "CONFIRMED"
+  "booking": {
+    "id": "booking-id",
+    "status": "expired",
+    "paymentStatus": "unpaid",
+    "holdExpiresAt": "2026-11-11T12:10:00Z",
+    "cancelReason": "payment_timeout",
+    "eventName": "Concert name",
+    "section": "CAT 1",
+    "row": "A",
+    "seats": ["A4", "A5"],
+    "quantity": 2,
+    "total": 500
+  },
+  "seatReleaseAudit": {
+    "status": "verified",
+    "expectedSeatCount": 2,
+    "releasedSeatCount": 2,
+    "availableSeatCount": 2,
+    "verifiedAt": "2026-11-11T12:10:02Z",
+    "message": "All held seats were returned to inventory."
+  }
 }
 ```
 
-* **Response:** `200 OK` with `{"status": "SUCCESS", "message": "Notification dispatched"}`
+The Admin page displays the audit result returned by the backend; it does not infer a successful release from a cancelled order status alone.
 
----
-
-## 4. Partial Failure & Fault Tolerance Testing
-
-1. **Normal Flow:** Ensure all services are active. Complete a booking from the Client UI; the Notification Service logs:
-
-   ```text
-   [NOTIF WORKER] Successfully processed CONFIRMED for user@example.com | Booking ID: B104 | Seats: ['C4']
-   ```
-
-2. **Simulate Partial Failure:** Kill/stop the Notification Service terminal (`Ctrl + C` or `docker stop <notification_container_id>`).
-
-3. **Resilience Verification:** Submit a new booking from the Client UI while Notification Service is down.
-   * The Booking Service catches the connection timeout/failure and logs a `[WARN]` fallback message.
-   * The user still receives `201 Created` with a confirmed booking (demonstrating decoupled fault tolerance).
