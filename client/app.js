@@ -186,20 +186,20 @@ function updateEventSearch() {
   empty.hidden = visibleCount > 0;
 }
 const ARENA_ZONES = {
-  VVIP: { label: [260, 112], paths: ["M211 88 Q260 77 309 88 L302 128 Q260 119 218 128 Z"] },
+  VVIP: { label: [260, 107], paths: ["M211 88 Q260 77 309 88 L302 128 Q260 119 218 128 Z"] },
   VIP: { label: [175, 120], paths: ["M145 96 Q174 83 203 89 L213 130 Q180 138 153 156 Z", "M375 96 Q346 83 317 89 L307 130 Q340 138 367 156 Z"] },
   PS1: { label: [194, 166], paths: ["M161 148 Q187 132 218 132 L230 178 Q198 183 174 199 Z", "M359 148 Q333 132 302 132 L290 178 Q322 183 346 199 Z"] },
   PS2: { label: [260, 205], paths: ["M185 190 Q260 174 335 190 L350 229 Q260 216 170 229 Z"] },
-  PS3: { label: [126, 219], paths: ["M105 183 Q132 164 158 158 L173 207 Q145 220 122 240 Z", "M415 183 Q388 164 362 158 L347 207 Q375 220 398 240 Z"] },
-  PS4: { label: [260, 260], paths: ["M75 233 Q101 213 119 208 L136 256 Q116 275 95 286 Z", "M445 233 Q419 213 401 208 L384 256 Q404 275 425 286 Z", "M145 244 Q260 223 375 244 L389 281 Q260 263 131 281 Z"] },
+  PS3: { label: [143, 203], paths: ["M105 183 Q132 164 158 158 L173 207 Q145 220 122 240 Z", "M415 183 Q388 164 362 158 L347 207 Q375 220 398 240 Z"] },
+  PS4: { label: [260, 253], paths: ["M75 233 Q101 213 119 208 L136 256 Q116 275 95 286 Z", "M445 233 Q419 213 401 208 L384 256 Q404 275 425 286 Z", "M145 244 Q260 223 375 244 L389 281 Q260 263 131 281 Z"] },
 };
 const UNIFI_ZONES = {
   VVIP: { label: [350, 153], paths: ["M289 127 L411 127 L431 169 L269 169 Z"] },
   VIP: { label: [350, 193], paths: ["M270 174 L430 174 L440 212 L260 212 Z"] },
-  PS1: { label: [157, 205], paths: ["M117 148 L247 169 L236 216 L110 199 Z", "M583 148 L453 169 L464 216 L590 199 Z"] },
+  PS1: { label: [178, 184], paths: ["M117 148 L247 169 L236 216 L110 199 Z", "M583 148 L453 169 L464 216 L590 199 Z"] },
   PS2: { label: [350, 323], paths: ["M221 284 Q350 307 479 284 L469 331 Q350 352 231 331 Z"] },
-  PS3: { label: [168, 119], paths: ["M112 111 Q150 73 212 73 L258 116 L245 155 L116 135 Z", "M588 111 Q550 73 488 73 L442 116 L455 155 L584 135 Z"] },
-  PS4: { label: [148, 278], paths: ["M101 211 L226 230 L215 281 Q154 290 105 258 Z", "M599 211 L474 230 L485 281 Q546 290 595 258 Z"] },
+  PS3: { label: [178, 116], paths: ["M112 111 Q150 73 212 73 L258 116 L245 155 L116 135 Z", "M588 111 Q550 73 488 73 L442 116 L455 155 L584 135 Z"] },
+  PS4: { label: [164, 253], paths: ["M101 211 L226 230 L215 281 Q154 290 105 258 Z", "M599 211 L474 230 L485 281 Q546 290 595 258 Z"] },
   GA: { label: [350, 245], paths: ["M264 217 L436 217 L445 274 L255 274 Z"] },
 };
 const STADIUM_ZONES = {
@@ -237,7 +237,7 @@ function mapSection(name) {
 
 function unifiArenaMap(event) {
   const zones = Object.keys(UNIFI_ZONES).filter(name => event.sections.includes(name)).map(name => mapZoneButton(name, UNIFI_ZONES[name], event)).join("");
-  return `<div class="venue-map arena-map unifi-map"><svg class="arena-map-svg" viewBox="0 0 700 410" role="group" aria-label="Interactive Unifi Arena concert seating map"><rect class="unifi-bowl" x="65" y="61" width="570" height="306" rx="132"/><rect class="unifi-ring" x="95" y="84" width="510" height="260" rx="112"/><rect class="unifi-floor" x="222" y="184" width="256" height="123" rx="9"/><path class="unifi-centerline" d="M222 245H478"/><g class="unifi-stage"><path d="M290 45h120v28H290z"/><text x="350" y="64" text-anchor="middle">STAGE</text></g><g class="unifi-sections">${zones}</g><text class="unifi-floor-label" x="350" y="330" text-anchor="middle">INDOOR ARENA FLOOR</text></svg><div class="map-footnote">Unifi Arena · compact indoor bowl · schematic concert layout</div></div>`;
+  return `<div class="venue-map arena-map unifi-map"><svg class="arena-map-svg" viewBox="0 0 700 410" role="group" aria-label="Interactive Unifi Arena concert seating map"><rect class="unifi-bowl" x="65" y="61" width="570" height="306" rx="132"/><rect class="unifi-ring" x="95" y="84" width="510" height="260" rx="112"/><rect class="unifi-floor" x="222" y="184" width="256" height="123" rx="9"/><path class="unifi-centerline" d="M222 245H478"/><g class="unifi-stage"><path d="M290 45h120v28H290z"/><text x="350" y="64" text-anchor="middle">STAGE</text></g><g class="unifi-sections">${zones}</g><text class="unifi-floor-label" x="350" y="298" text-anchor="middle">INDOOR ARENA FLOOR</text></svg><div class="map-footnote">Unifi Arena · compact indoor bowl · schematic concert layout</div></div>`;
 }
 
 function nationalStadiumMap(event) {
