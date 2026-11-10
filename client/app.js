@@ -176,9 +176,32 @@ function updateEventSearch() {
   strip.innerHTML = eventCards();
 }
 
-function concertOptions(selectedId) {
-  return state.events.filter(item => state.locationFilter === "all" || item.venueKey === state.locationFilter)
-    .map(item => `<option value="${esc(item.id)}" ${item.id === selectedId ? "selected" : ""}>${esc(item.name)} · ${esc(item.date)}</option>`).join("");
+const concertGroupKey = event => `${event.venueKey}::${event.name}::${event.tour}`;
+function concertGroup(event) {
+  return state.events.filter(item => concertGroupKey(item) === concertGroupKey(event)).sort((a, b) => String(a.isoDate || a.date).localeCompare(String(b.isoDate || b.date)));
+}
+function concertGroups() {
+  const events = state.events.filter(item => state.locationFilter === "all" || item.venueKey === state.locationFilter);
+  const seen = new Set();
+  return events.filter(item => {
+    const key = concertGroupKey(item);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+function concertOptions(selectedEvent) {
+  return concertGroups().map(item => `<option value="${esc(concertGroupKey(item))}" ${concertGroupKey(item) === concertGroupKey(selectedEvent) ? "selected" : ""}>${esc(item.name)}</option>`).join("");
+}
+function dateOptions(selectedEvent) {
+  return concertGroup(selectedEvent).map(item => `<option value="${esc(item.id)}" ${item.id === selectedEvent.id ? "selected" : ""}>${esc(item.date)}</option>`).join("");
+}
+function selectShowForTickets(show) {
+  if (!show) return;
+  state.eventId = show.id; state.section = "All sections"; state.listing = null; state.receipt = null; state.step = 1;
+  state.classFilter = "all"; state.minPrice = 0; state.maxPrice = 2000; state.quantity = 2; state.sort = "recommended";
+  render(); refreshListings();
+  requestAnimationFrame(() => $("#market")?.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 const ARENA_ZONES = {
   VVIP: { label: [260, 107], paths: ["M211 88 Q260 77 309 88 L302 128 Q260 119 218 128 Z"] },
@@ -249,7 +272,7 @@ function listingPanel(event) {
   const listings = getListings();
   const sectionOptions = ["All sections", ...(event.sections || VENUE_SECTIONS[event.venueKey] || VENUE_SECTIONS["arena-stars"])].map(section => `<option value="${esc(section)}" ${state.section === section ? "selected" : ""}>${esc(section)}</option>`).join("");
   const filters = TIERS.map(item => `<button class="filter-chip ${state.classFilter === item.id ? "filter-active" : ""}" data-action="class-filter" data-filter="${item.id}">${item.name}</button>`).join("");
-  return `<div class="market-grid"><section class="map-card ${state.mapExpanded ? "map-card-expanded" : ""}" role="${state.mapExpanded ? "dialog" : "region"}" aria-modal="${state.mapExpanded}" aria-label="${esc(event.venue)} ticket zones"><div class="card-heading"><div><span class="section-kicker">${esc(event.venue.toUpperCase())}</span><h2>Choose your zone</h2></div><button class="map-help" data-action="${state.mapExpanded ? "close-map" : "map-help"}" aria-label="${state.mapExpanded ? "Close map" : "Map information"}">${state.mapExpanded ? "×" : "?"}</button></div>${sectionMap()}<div class="map-legend"><span><i class="legend-dot dot-available"></i>Demo marketplace listings shown</span><span><i class="legend-dot dot-selected"></i>Selected zone</span><span><i class="legend-dot dot-none"></i>No sample listings</span></div>${!state.mapExpanded ? `<button class="clear-section map-expand-button" data-action="expand-map">Zoom in</button>` : ""}</section><button class="map-backdrop" data-action="close-map" aria-label="Close expanded venue map" ${state.mapExpanded ? "" : "hidden"}></button><section class="listings-column"><div class="listings-toolbar"><div><span class="section-kicker">${esc(event.name.toUpperCase())} · ${esc(event.venue.toUpperCase())}</span><h2>Tickets for this show</h2><p>${listings.length} demo listings · Prices shown per ticket</p></div><a class="official-link" href="${esc(event.source)}" target="_blank" rel="noopener">Official event info ↗</a></div><div class="filter-panel"><div class="filter-row"><label class="quantity-filter"><span>Tickets</span><select data-change="quantity">${[1,2,3,4,5,6].map(n => `<option ${n === selectedCount() ? "selected" : ""}>${n}</option>`).join("")}</select></label><label class="section-filter"><span>Section</span><select data-change="section">${sectionOptions}</select></label><label class="sort-filter"><span>Sort by</span><select data-change="sort"><option value="recommended" ${state.sort === "recommended" ? "selected" : ""}>Recommended</option><option value="price" ${state.sort === "price" ? "selected" : ""}>Lowest price</option><option value="best" ${state.sort === "best" ? "selected" : ""}>Best view</option></select></label></div><div class="filter-chips">${filters}</div><div class="price-filter"><label>Price per ticket <strong>${money(state.minPrice)} – ${money(state.maxPrice)}</strong></label><div><input aria-label="Minimum price" type="range" min="0" max="2000" step="25" value="${state.minPrice}" data-change="min-price"><input aria-label="Maximum price" type="range" min="100" max="2000" step="25" value="${state.maxPrice}" data-change="max-price"></div></div></div><div class="demo-notice"><span>i</span><p><strong>Sample marketplace listings</strong> — prices and availability here are demo data. Connect your ticket inventory API to show live offers.</p></div><div class="listing-header"><strong>${listings.length} listings</strong><span>Price includes estimated fees</span></div><div class="listing-results">${listings.length ? listings.map(listingCard).join("") : `<div class="empty-listings"><strong>No tickets match these filters.</strong><span>Try another section or ticket type.</span><button data-action="clear-filters">Clear filters</button></div>`}</div></section></div>`;
+  return `<div class="market-grid"><section class="map-card ${state.mapExpanded ? "map-card-expanded" : ""}" role="${state.mapExpanded ? "dialog" : "region"}" aria-modal="${state.mapExpanded}" aria-label="${esc(event.venue)} ticket zones"><div class="card-heading"><div><span class="section-kicker">${esc(event.venue.toUpperCase())}</span><h2>Choose your zone</h2></div><button class="map-help" data-action="${state.mapExpanded ? "close-map" : "map-help"}" aria-label="${state.mapExpanded ? "Close map" : "Map information"}">${state.mapExpanded ? "×" : "?"}</button></div>${sectionMap()}<div class="map-legend"><span><i class="legend-dot dot-available"></i>Demo marketplace listings shown</span><span><i class="legend-dot dot-selected"></i>Selected zone</span><span><i class="legend-dot dot-none"></i>No sample listings</span></div>${!state.mapExpanded ? `<button class="clear-section map-expand-button" data-action="expand-map">Zoom in</button>` : ""}</section><button class="map-backdrop" data-action="close-map" aria-label="Close expanded venue map" ${state.mapExpanded ? "" : "hidden"}></button><section class="listings-column"><div class="listings-toolbar"><div><span class="section-kicker">${esc(event.name.toUpperCase())} · ${esc(event.venue.toUpperCase())}</span><h2>Tickets for this show</h2><p>${listings.length} demo listings · Prices shown per ticket</p></div><a class="official-link" href="${esc(event.source)}" target="_blank" rel="noopener">Official event info ↗</a></div><div class="filter-panel"><div class="filter-row"><label class="concert-filter"><span>Concert</span><select data-change="concert">${concertOptions(event)}</select></label><label class="date-filter"><span>Date</span><select data-change="date">${dateOptions(event)}</select></label><label class="quantity-filter"><span>Tickets</span><select data-change="quantity">${[1,2,3,4,5,6].map(n => `<option value="${n}" ${n === selectedCount() ? "selected" : ""}>${n}</option>`).join("")}</select></label><label class="section-filter"><span>Location</span><select data-change="section">${sectionOptions}</select></label><label class="sort-filter"><span>Sort by</span><select data-change="sort"><option value="recommended" ${state.sort === "recommended" ? "selected" : ""}>Recommended</option><option value="price" ${state.sort === "price" ? "selected" : ""}>Lowest price</option><option value="best" ${state.sort === "best" ? "selected" : ""}>Best view</option></select></label></div><div class="filter-chips">${filters}</div><div class="price-filter"><label>Price per ticket <strong>${money(state.minPrice)} – ${money(state.maxPrice)}</strong></label><div><input aria-label="Minimum price" type="range" min="0" max="2000" step="25" value="${state.minPrice}" data-change="min-price"><input aria-label="Maximum price" type="range" min="100" max="2000" step="25" value="${state.maxPrice}" data-change="max-price"></div></div></div><div class="demo-notice"><span>i</span><p><strong>Sample marketplace listings</strong> — prices and availability here are demo data. Connect your ticket inventory API to show live offers.</p></div><div class="listing-header"><strong>${listings.length} listings</strong><span>Price includes estimated fees</span></div><div class="listing-results">${listings.length ? listings.map(listingCard).join("") : `<div class="empty-listings"><strong>No tickets match these filters.</strong><span>Try another section or ticket type.</span><button data-action="clear-filters">Clear filters</button></div>`}</div></section></div>`;
 }
 
 function stepper() {
@@ -319,7 +342,7 @@ function render() {
   document.body.classList.toggle("map-open", state.mapExpanded);
   root.innerHTML = `<div class="app-shell"><header class="topbar ${state.searchOpen ? "search-open" : ""}"><a class="brand" href="#top">${logo()}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><div class="top-actions"><label class="search-box"><span>⌕</span><input name="eventSearch" value="${esc(state.searchTerm)}" placeholder="Artist, event or venue" aria-label="Search shows"></label>${locationPicker()}<button class="sell-button" data-action="sell">Sell</button><button class="account-button" data-action="account" aria-label="Account and my bookings" title="Account"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.25"></circle><circle cx="12" cy="9" r="3"></circle><path d="M6.8 18.2c.7-2.7 2.7-4.2 5.2-4.2s4.5 1.5 5.2 4.2"></path></svg></button></div><button class="mobile-search" data-action="toggle-search" aria-label="Search">⌕</button></header><main id="top"><section class="event-hero"><img class="hero-photo" src="${esc(event.image)}" alt="${esc(event.imageAlt)}" decoding="async" fetchpriority="high" onerror="this.hidden=true"><div class="hero-shade"></div><div class="hero-inner"><div class="hero-event-copy"><div class="hero-tags"><span>${esc(event.tag)}</span><span class="live-tag">LIVE MUSIC</span></div><p class="hero-kicker">${esc(event.tour)}</p><h1>${esc(event.name)}</h1><p class="hero-meta">${esc(event.date)} <i></i> ${esc(event.venue)} <i></i> ${esc(event.area)}</p><p class="hero-time">${esc(event.time)} · ${esc(event.state === "SOLD OUT" ? "Official tickets sold out" : "Demo marketplace listings shown")}</p><a class="primary-btn hero-button" href="#market">Find tickets</a></div><div class="hero-poster-wrap">${posterImage(event, "hero-poster")}<span>OFFICIAL EVENT ARTWORK</span></div></div><div class="hero-bottom"><span><i class="live-dot"></i> ECHO LIVE PICKS</span><a href="${esc(event.source)}" target="_blank" rel="noopener">Official event details ↗</a></div></section>
       <section class="discovery" id="shows"><div class="discovery-head"><div><span class="section-kicker">UP NEXT · ALL VENUES</span><h2>Find your next live moment</h2><p>Live music across Resorts World Genting and Bukit Jalil.</p></div><button class="all-shows" data-action="toggle-all-shows">${state.showAllEvents ? "Show fewer shows" : "View all shows"}</button></div><div class="event-strip">${eventCards()}</div></section>
-      <section class="market-section" id="market"><div class="market-heading"><div class="market-heading-main"><label class="concert-selector"><span>Concert</span><select aria-label="Choose concert" data-change="market-event">${concertOptions(event.id)}</select></label><div class="concert-date"><span>DATE</span><strong>${esc(event.date)}</strong></div><div class="market-heading-copy"><span class="section-kicker">TICKETS FOR ${esc(event.name.toUpperCase())}</span><h2>Pick a spot. Feel every song.</h2><p>${esc(event.venue)} · ${esc(event.area)}</p></div></div><div class="event-status ${event.state === "SOLD OUT" ? "sold-out" : ""}"><i></i>${esc(event.state)}</div></div>${stepper()}${state.step === 1 ? listingPanel(event) : ""}${state.step === 2 ? reviewView(event) : ""}${state.step === 3 ? checkoutView(event) : ""}${state.step === 4 ? bookingView() : ""}</section>
+      <section class="market-section" id="market"><div class="market-heading"><div><span class="section-kicker">TICKETS FOR ${esc(event.name.toUpperCase())}</span><h2>Pick a spot. Feel every song.</h2><p>${esc(event.venue)} · ${esc(event.area)}</p></div><div class="event-status ${event.state === "SOLD OUT" ? "sold-out" : ""}"><i></i>${esc(event.state)}</div></div>${stepper()}${state.step === 1 ? listingPanel(event) : ""}${state.step === 2 ? reviewView(event) : ""}${state.step === 3 ? checkoutView(event) : ""}${state.step === 4 ? bookingView() : ""}</section>
     </main><footer class="site-footer" id="footer"><a class="brand footer-brand" href="#top">${logo(32)}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><span>© ${new Date().getFullYear()} ECHO LIVE. All rights reserved.</span><div><a href="#footer">Help center</a><a href="#footer">Terms</a><a href="https://youtu.be/dQw4w9WgXcQ?si=SttXnPRIuduZt2Mv" target="_blank" rel="noopener">Privacy</a><button class="footer-admin-link" data-action="admin">Admin</button></div></footer>${state.toast ? `<div class="toast" role="status"><span>!</span>${esc(state.toast)}<button data-action="dismiss" aria-label="Dismiss">×</button></div>` : ""}</div>`;
   const main = $("#top", root);
   if (state.page === "sell") main.innerHTML = sellView();
@@ -389,8 +412,8 @@ root.addEventListener("click", async event => {
   if (!button) return;
   const action = button.dataset.action;
   if (action === "event") {
-    state.eventId = button.dataset.id; state.section = "All sections"; state.listing = null; state.receipt = null; state.step = 1; state.locationOpen = false; render(); refreshListings();
-    requestAnimationFrame(() => $("#market")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    state.locationOpen = false;
+    selectShowForTickets(state.events.find(item => item.id === button.dataset.id));
   } else if (action === "toggle-location") { state.locationOpen = !state.locationOpen; render(); }
   else if (action === "location-choice") {
     state.locationFilter = button.dataset.location; state.locationOpen = false; state.searchTerm = "";
@@ -439,14 +462,13 @@ root.addEventListener("keydown", event => {
   if (zone && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); zone.click(); }
 });root.addEventListener("change", event => {
   const target = event.target;
-  if (target.dataset.change === "market-event") {
-    const show = state.events.find(item => item.id === target.value);
-    if (show) {
-      state.eventId = show.id; state.section = "All sections"; state.listing = null; state.receipt = null; state.step = 1;
-      state.classFilter = "all"; state.minPrice = 0; state.maxPrice = 2000; state.quantity = 2; state.sort = "recommended";
-      render(); refreshListings();
-      requestAnimationFrame(() => $("#market")?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    }
+  if (target.dataset.change === "concert") {
+    const concert = concertGroups().find(item => concertGroupKey(item) === target.value);
+    if (concert) selectShowForTickets(concertGroup(concert)[0]);
+    return;
+  }
+  if (target.dataset.change === "date") {
+    selectShowForTickets(state.events.find(item => item.id === target.value));
     return;
   }
   if (target.dataset.change === "sell-event") {
