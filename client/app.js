@@ -273,13 +273,13 @@ function mapSection(name) {
 }
 
 function unifiArenaMap(event) {
-  const zones = Object.keys(AXIATA_ZONES).filter(name => event.sections.includes(name)).map(name => mapZoneButton(name, AXIATA_ZONES[name], event)).join("");
+  const zones = Object.keys(AXIATA_ZONES).map(name => mapZoneButton(name, AXIATA_ZONES[name], event)).join("");
   return `<div class="venue-map arena-map unifi-map"><svg class="arena-map-svg" viewBox="330 0 710 730" role="group" aria-label="Interactive Axiata Arena concert seating map"><rect class="axiata-canvas" x="330" y="0" width="710" height="730"/><path class="axiata-stage" d="M590 30h228v58H590zM632 88h144v45H632z"/><text class="axiata-stage-label" x="704" y="70" text-anchor="middle">STAGE</text><rect class="axiata-royal-box" x="463" y="176" width="30" height="105"/><rect class="axiata-royal-box" x="463" y="289" width="30" height="105"/><text class="axiata-media-label" x="478" y="228" text-anchor="middle" transform="rotate(-90 478 228)">ROYAL BOX</text><text class="axiata-media-label" x="478" y="341" text-anchor="middle" transform="rotate(-90 478 341)">MEDIA</text><text class="axiata-aisle-label" x="577" y="327" text-anchor="middle">AISLE</text><g class="unifi-sections">${zones}</g><rect class="axiata-stage-b" x="600" y="440" width="180" height="44" rx="2"/><text class="axiata-stage-b-label" x="690" y="469" text-anchor="middle">STAGE B</text></svg></div>`;
 }
 
 function nationalStadiumMap(event) {
-  const ringZones = Object.keys(STADIUM_ZONES).filter(name => name.startsWith("CAT") && event.sections.includes(name)).map(name => mapZoneButton(name, STADIUM_ZONES[name], event)).join("");
-  const floorZones = Object.keys(STADIUM_ZONES).filter(name => name.startsWith("FLOOR") && event.sections.includes(name)).map(name => mapZoneButton(name, STADIUM_ZONES[name], event)).join("");
+  const ringZones = Object.keys(STADIUM_ZONES).filter(name => name.startsWith("CAT")).map(name => mapZoneButton(name, STADIUM_ZONES[name], event)).join("");
+  const floorZones = Object.keys(STADIUM_ZONES).filter(name => name.startsWith("FLOOR")).map(name => mapZoneButton(name, STADIUM_ZONES[name], event)).join("");
   const stageMarkup = event.stageLayout === "360" ? `<g class="stadium-stage stadium-stage-360"><circle cx="400" cy="317" r="29"/><text x="400" y="321" text-anchor="middle">360°</text></g>` : `<g class="stadium-stage"><path d="M342 216h116v30H342z"/><text x="400" y="236" text-anchor="middle">STAGE</text></g>`;
   return `<div class="venue-map arena-map national-map"><svg class="arena-map-svg" viewBox="0 0 800 570" role="group" aria-label="Interactive TM Stadium Nasional Bukit Jalil numbered seating map"><ellipse class="stadium-outline" cx="400" cy="315" rx="383" ry="249"/><ellipse class="stadium-track" cx="400" cy="315" rx="225" ry="135"/><g class="stadium-zones">${ringZones}</g><rect class="stadium-field" x="238" y="254" width="324" height="126" rx="8"/><path class="stadium-field-lines" d="M238 317H562M400 254V380"/><circle class="stadium-field-lines" cx="400" cy="317" r="25"/><g class="stadium-floor-zones">${floorZones}</g>${stageMarkup}<text class="stadium-level level-one" x="400" y="138" text-anchor="middle">LEVEL 1 · 101–132</text><text class="stadium-level level-two" x="400" y="101" text-anchor="middle">LEVEL 2 · 201–232</text><text class="stadium-level level-three" x="400" y="65" text-anchor="middle">LEVEL 3 · 301–332</text><g class="stadium-gates"><text x="91" y="430">GATE A</text><text x="400" y="536">GATE B</text><text x="709" y="430">GATE C</text><text x="202" y="487">GATE D</text><text x="598" y="487">GATE E</text></g></svg><div class="map-footnote">TM Stadium Nasional · numbered 100 / 200 / 300 level blocks · schematic</div></div>`;
 }
@@ -294,7 +294,7 @@ function listingCard(item, index) {
 
 function listingPanel(event) {
   const listings = getListings();
-  const venueSections = event.sections || VENUE_SECTIONS[event.venueKey] || VENUE_SECTIONS["arena-stars"];
+  const venueSections = [...new Set([...(VENUE_SECTIONS[event.venueKey] || []), ...(event.sections || [])])];
   const selectedLocation = venueSections.includes(state.section) ? state.section : "All sections";
   const sectionOptions = [["All sections", "All locations"], ...venueSections.map(section => [section, section])].map(([value, label]) => `<option value="${esc(value)}" ${selectedLocation === value ? "selected" : ""}>${esc(label)}</option>`).join("");
   const filters = TIERS.map(item => `<button class="filter-chip ${state.classFilter === item.id ? "filter-active" : ""}" data-action="class-filter" data-filter="${item.id}">${item.name}</button>`).join("");
@@ -446,7 +446,7 @@ root.addEventListener("click", async event => {
     const matches = state.events.filter(item => state.locationFilter === "all" || item.venueKey === state.locationFilter);
     if (matches.length && !matches.some(item => item.id === state.eventId)) { state.eventId = matches[0].id; state.section = "All sections"; state.step = 1; state.listing = null; }
     render();
-  } else if (action === "section") { state.section = button.dataset.section; state.mapExpanded = false; document.body.classList.remove("map-open"); render(); }
+  } else if (action === "section") { state.section = state.section === button.dataset.section ? "All sections" : button.dataset.section; state.mapExpanded = false; document.body.classList.remove("map-open"); render(); }
   else if (action === "expand-map") { state.section = "All sections"; state.mapExpanded = true; render(); $("[data-action=close-map]")?.focus(); }
   else if (action === "close-map") { state.mapExpanded = false; document.body.classList.remove("map-open"); render(); $("[data-action=expand-map]")?.focus(); }
   else if (action === "clear-section") { state.section = "All sections"; render(); }
