@@ -492,3 +492,11 @@ body.map-open{overflow:hidden}
 .booking-result-head h3{font-size:22px}
 .booking-result .receipt-grid small{font-size:11px}
 .booking-result .receipt-grid strong{font-size:14px}
+
+/* Booking shortcuts and simplified seller flow */
+.booking-footer-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px}
+.browse-text-button{border:0;background:transparent;padding:8px 0;color:#6c6371;font-size:14px;font-weight:700}
+.browse-text-button:hover{color:#513363;text-decoration:underline}
+.history-button{min-height:42px;padding:8px 0;border:0;border-radius:0;background:transparent;color:#513363;font-weight:700}
+.history-button:hover{color:#392248;text-decoration:underline}
+@media(max-width:760px){.booking-footer-actions{margin-top:17px}.browse-text-button{font-size:13px}.history-button{min-height:40px;padding:0 18px}}
