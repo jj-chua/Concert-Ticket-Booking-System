@@ -70,7 +70,7 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const money = value => `RM ${Number(value || 0).toFixed(2)}`;
 const uuid = () => window.crypto?.randomUUID?.() || "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => { const n = Math.random() * 16 | 0; return (c === "x" ? n : (n & 3 | 8)).toString(16); });
-const state = { page: "home", pageHistory: ["home"], sellDraft: null, step: 1, events: EVENTS, eventId: "priscilla-abby-genting-2026", section: "All sections", classFilter: "all", quantity: 2, sort: "recommended", minPrice: 0, maxPrice: 2000, listing: null, key: "", name: "", email: "", receipt: null, bookingId: "", booking: null, lookupBusy: false, cancelBusy: false, adminQuery: "", adminOrder: null, adminBusy: false, adminError: "", refreshing: false, toast: "", searchTerm: "", showAllEvents: false, searchOpen: false, locationFilter: "all", locationOpen: false, mapExpanded: false };
+const state = { page: "home", pageHistory: ["home"], sellDraft: null, step: 1, events: EVENTS, eventId: "priscilla-abby-genting-2026", section: "All sections", block: "All blocks", classFilter: "all", quantity: 2, sort: "recommended", minPrice: 0, maxPrice: 2000, listing: null, key: "", name: "", email: "", receipt: null, bookingId: "", booking: null, lookupBusy: false, cancelBusy: false, adminQuery: "", adminOrder: null, adminBusy: false, adminError: "", refreshing: false, toast: "", searchTerm: "", showAllEvents: false, searchOpen: false, locationFilter: "all", locationOpen: false, mapExpanded: false };
 const root = $("#root");
 const currentEvent = () => state.events.find(item => item.id === state.eventId) || EVENTS[0];
 const selectedCount = () => Number(state.quantity || 2);
@@ -200,7 +200,7 @@ function dateOptions(selectedEvent) {
 }
 function selectShowForTickets(show) {
   if (!show) return;
-  state.eventId = show.id; state.section = "All sections"; state.listing = null; state.receipt = null; state.step = 1;
+  state.eventId = show.id; state.section = "All sections"; state.block = "All blocks"; state.listing = null; state.receipt = null; state.step = 1;
   state.locationFilter = show.venueKey || state.locationFilter;
   state.classFilter = "all"; state.minPrice = 0; state.maxPrice = 2000; state.quantity = 2; state.sort = "recommended";
   render(); refreshListings();
@@ -249,6 +249,10 @@ function makeStadiumZones() {
   return zones;
 }
 const STADIUM_ZONES = makeStadiumZones();
+function venueMapBlocks(venueKey) {
+  const zones = venueKey === "unifi-arena" ? AXIATA_ZONES : venueKey === "tm-stadium-nasional" ? STADIUM_ZONES : ARENA_ZONES;
+  return Object.entries(zones).flatMap(([area, zone]) => (zone.blocks || []).map((block, index) => ({ area, key: `${area}::${index}`, label: block.label || area })));
+}
 
 function sectionMap() {
   const event = currentEvent();
@@ -258,15 +262,20 @@ function sectionMap() {
 }
 
 function mapZoneButton(name, zone, event = currentEvent()) {
-  const active = state.section === name;
+  const areaActive = state.section === name;
   const available = event.listings?.some(item => item.section === name);
   const listings = (event.listings || []).filter(item => item.section === name);
   const lowest = listings.length ? Math.min(...listings.map(item => item.price)) : null;
   const gentingColorTier = { VVIP: 0, VIP: 0, PS1: 1, PS2: 2, PS3: 3, PS4: 4 };
-  const tier = event.venueKey === "arena-stars" ? gentingColorTier[name] ?? 0 : Math.max(0, (event.sections || []).indexOf(name));
+  const tier = event.venueKey === "arena-stars" ? gentingColorTier[name] ?? 0 : Math.max(0, (VENUE_SECTIONS[event.venueKey] || event.sections || []).indexOf(name));
   const priceLabel = lowest == null ? "No sample offers" : `from RM ${Number(lowest).toLocaleString("en-MY")}`;
   const blocks = zone.blocks || (zone.paths || []).map((d, index) => ({ d, label: index ? "" : name, x: zone.label?.[0] || 0, y: zone.label?.[1] || 0 }));
-  return `<g class="seat-zone tier-${tier % 11} ${active ? "zone-active" : ""} ${available ? "zone-available" : "zone-empty"}" data-action="section" data-section="${esc(name)}" role="button" tabindex="0" aria-pressed="${active}" aria-label="${esc(name)}, ${priceLabel}"><title>${esc(name)} · ${priceLabel} · click to filter tickets</title>${blocks.map(block => `<path d="${block.d}"/>${block.label ? `<text x="${block.x}" y="${block.y}" text-anchor="middle" dominant-baseline="central">${esc(block.label)}</text>` : ""}`).join("")}</g>`;
+  return blocks.map((block, index) => {
+    const blockKey = `${name}::${index}`;
+    const active = state.block === blockKey || (state.block === "All blocks" && areaActive);
+    const label = block.label || name;
+    return `<g class="seat-zone tier-${tier % 11} ${active ? "zone-active" : ""} ${available ? "zone-available" : "zone-empty"}" data-action="map-block" data-area="${esc(name)}" data-block="${esc(blockKey)}" role="button" tabindex="0" aria-pressed="${active}" aria-label="${esc(name)} · ${esc(label)}, ${priceLabel}"><title>${esc(name)} · ${esc(label)} · ${priceLabel}</title><path d="${block.d}"/>${block.label ? `<text x="${block.x}" y="${block.y}" text-anchor="middle" dominant-baseline="central">${esc(block.label)}</text>` : ""}</g>`;
+  }).join("");
 }
 
 function mapSection(name) {
@@ -296,11 +305,15 @@ function listingCard(item, index) {
 function listingPanel(event) {
   const listings = getListings();
   const venueSections = [...new Set([...(VENUE_SECTIONS[event.venueKey] || []), ...(event.sections || [])])];
-  const selectedLocation = venueSections.includes(state.section) ? state.section : "All sections";
-  const sectionOptions = [["All sections", "All locations"], ...venueSections.map(section => [section, section])].map(([value, label]) => `<option value="${esc(value)}" ${selectedLocation === value ? "selected" : ""}>${esc(label)}</option>`).join("");
-  const venueOptions = LOCATION_OPTIONS.map(location => `<option value="${esc(location.id)}" ${state.locationFilter === location.id ? "selected" : ""}>${esc(location.label)}</option>`).join("");
+  const selectedArea = venueSections.includes(state.section) ? state.section : "All sections";
+  const areaOptions = [["All sections", "All areas"], ...venueSections.map(area => [area, area])].map(([value, label]) => `<option value="${esc(value)}" ${selectedArea === value ? "selected" : ""}>${esc(label)}</option>`).join("");
+  const visibleBlocks = venueMapBlocks(event.venueKey).filter(block => selectedArea === "All sections" || block.area === selectedArea);
+  const sectionOptions = `<option value="All blocks" ${state.block === "All blocks" ? "selected" : ""}>All blocks</option>${venueSections.map(area => {
+    const blocks = visibleBlocks.filter(block => block.area === area);
+    return blocks.length ? `<optgroup label="${esc(area)}">${blocks.map(block => `<option value="${esc(block.key)}" ${state.block === block.key ? "selected" : ""}>${esc(block.label)}</option>`).join("")}</optgroup>` : "";
+  }).join("")}`;
   const filters = TIERS.map(item => `<button class="filter-chip ${state.classFilter === item.id ? "filter-active" : ""}" data-action="class-filter" data-filter="${item.id}">${item.name}</button>`).join("");
-  return `<div class="market-grid"><section class="map-card ${state.mapExpanded ? "map-card-expanded" : ""}" role="${state.mapExpanded ? "dialog" : "region"}" aria-modal="${state.mapExpanded}" aria-label="${esc(event.venue)} ticket zones"><div class="card-heading"><div><span class="section-kicker">${esc(event.venue.toUpperCase())}</span><h2>Choose your zone</h2></div><button class="map-help" data-action="${state.mapExpanded ? "close-map" : "map-help"}" aria-label="${state.mapExpanded ? "Close map" : "Map information"}">${state.mapExpanded ? "×" : "?"}</button></div>${sectionMap()}${mapPriceLegend(event)}<div class="map-legend"><span><i class="legend-dot dot-available"></i>Listed zone · price-coded</span><span><i class="legend-dot dot-selected"></i>Selected zone</span><span><i class="legend-dot dot-none"></i>No sample offers</span></div>${!state.mapExpanded ? `<button class="clear-section map-expand-button" data-action="expand-map">Zoom in</button>` : ""}</section><button class="map-backdrop" data-action="close-map" aria-label="Close expanded venue map" ${state.mapExpanded ? "" : "hidden"}></button><section class="listings-column"><div class="listings-toolbar"><div><span class="section-kicker">${esc(event.name.toUpperCase())} · ${esc(event.venue.toUpperCase())}</span><h2>Tickets for this show</h2><p>${listings.length} demo listings · Prices shown per ticket</p></div><a class="official-link" href="${esc(event.source)}" target="_blank" rel="noopener">Official event info ↗</a></div><div class="filter-panel"><div class="filter-row"><label class="concert-filter"><span>Concert</span><select data-change="concert">${concertOptions(event)}</select></label><label class="date-filter"><span>Date</span><select data-change="date">${dateOptions(event)}</select></label><label class="quantity-filter"><span>Tickets</span><select data-change="quantity">${[1,2,3,4,5,6].map(n => `<option value="${n}" ${n === selectedCount() ? "selected" : ""}>${n}</option>`).join("")}</select></label><label class="location-filter"><span>Location</span><select data-change="ticket-location">${venueOptions}</select></label><label class="section-filter"><span>Section</span><select data-change="section">${sectionOptions}</select></label><label class="sort-filter"><span>Sort by</span><select data-change="sort"><option value="recommended" ${state.sort === "recommended" ? "selected" : ""}>Recommended</option><option value="price" ${state.sort === "price" ? "selected" : ""}>Lowest price</option><option value="best" ${state.sort === "best" ? "selected" : ""}>Best view</option></select></label></div><div class="filter-chips">${filters}</div><div class="price-filter"><label>Price per ticket <strong>${money(state.minPrice)} – ${money(state.maxPrice)}</strong></label><div><input aria-label="Minimum price" type="range" min="0" max="2000" step="25" value="${state.minPrice}" data-change="min-price"><input aria-label="Maximum price" type="range" min="100" max="2000" step="25" value="${state.maxPrice}" data-change="max-price"></div></div></div><div class="listing-header"><strong>${listings.length} listings</strong><span>Price includes estimated fees</span></div><div class="listing-results">${listings.length ? listings.map(listingCard).join("") : `<div class="empty-listings"><strong>No tickets match these filters.</strong><span>Try another section or ticket type.</span><button data-action="clear-filters">Clear filters</button></div>`}</div></section></div>`;
+  return `<div class="market-grid"><section class="map-card ${state.mapExpanded ? "map-card-expanded" : ""}" role="${state.mapExpanded ? "dialog" : "region"}" aria-modal="${state.mapExpanded}" aria-label="${esc(event.venue)} ticket zones"><div class="card-heading"><div><span class="section-kicker">${esc(event.venue.toUpperCase())}</span><h2>Choose your zone</h2></div><button class="map-help" data-action="${state.mapExpanded ? "close-map" : "map-help"}" aria-label="${state.mapExpanded ? "Close map" : "Map information"}">${state.mapExpanded ? "×" : "?"}</button></div>${sectionMap()}${mapPriceLegend(event)}<div class="map-legend"><span><i class="legend-dot dot-available"></i>Listed zone · price-coded</span><span><i class="legend-dot dot-selected"></i>Selected zone</span><span><i class="legend-dot dot-none"></i>No sample offers</span></div>${!state.mapExpanded ? `<button class="clear-section map-expand-button" data-action="expand-map">Zoom in</button>` : ""}</section><button class="map-backdrop" data-action="close-map" aria-label="Close expanded venue map" ${state.mapExpanded ? "" : "hidden"}></button><section class="listings-column"><div class="listings-toolbar"><div><span class="section-kicker">${esc(event.name.toUpperCase())} · ${esc(event.venue.toUpperCase())}</span><h2>Tickets for this show</h2><p>${listings.length} demo listings · Prices shown per ticket</p></div><a class="official-link" href="${esc(event.source)}" target="_blank" rel="noopener">Official event info ↗</a></div><div class="filter-panel"><div class="filter-row"><label class="concert-filter"><span>Concert</span><select data-change="concert">${concertOptions(event)}</select></label><label class="date-filter"><span>Date</span><select data-change="date">${dateOptions(event)}</select></label><label class="quantity-filter"><span>Tickets</span><select data-change="quantity">${[1,2,3,4,5,6].map(n => `<option value="${n}" ${n === selectedCount() ? "selected" : ""}>${n}</option>`).join("")}</select></label><label class="area-filter"><span>Area</span><select data-change="area">${areaOptions}</select></label><label class="section-filter"><span>Section</span><select data-change="block">${sectionOptions}</select></label><label class="sort-filter"><span>Sort by</span><select data-change="sort"><option value="recommended" ${state.sort === "recommended" ? "selected" : ""}>Recommended</option><option value="price" ${state.sort === "price" ? "selected" : ""}>Lowest price</option><option value="best" ${state.sort === "best" ? "selected" : ""}>Best view</option></select></label></div><div class="filter-chips">${filters}</div><div class="price-filter"><label>Price per ticket <strong>${money(state.minPrice)} – ${money(state.maxPrice)}</strong></label><div><input aria-label="Minimum price" type="range" min="0" max="2000" step="25" value="${state.minPrice}" data-change="min-price"><input aria-label="Maximum price" type="range" min="100" max="2000" step="25" value="${state.maxPrice}" data-change="max-price"></div></div></div><div class="listing-header"><strong>${listings.length} listings</strong><span>Price includes estimated fees</span></div><div class="listing-results">${listings.length ? listings.map(listingCard).join("") : `<div class="empty-listings"><strong>No tickets match these filters.</strong><span>Try another section or ticket type.</span><button data-action="clear-filters">Clear filters</button></div>`}</div></section></div>`;
 }
 
 function stepper() {
@@ -419,7 +432,7 @@ function publishListing(form) {
   const listing = { id: uuid(), eventId: event.id, eventName: event.name, section: String(formData.get("section")), row: String(formData.get("row")).toUpperCase(), seats: `Seats ${String(formData.get("seats")).trim()}`, qty: quantity, price, badges: ["Seller listed", "Reserved seats"], score: 7.8, sellerListing: true, sellerName: String(formData.get("sellerName")).trim(), sellerEmail: String(formData.get("sellerEmail")).trim(), createdAt: new Date().toISOString() };
   if (!saveSellerListings([...getSellerListings(), listing])) { toast(state.toast); return; }
   restoreSellerListings(); resetPageHistory(); state.sellDraft = null; state.eventId = event.id; state.step = 1; state.listing = null;
-  state.section = listing.section; state.classFilter = "all"; state.quantity = Math.min(2, quantity); state.sort = "recommended"; state.minPrice = 0; state.maxPrice = 2000; state.searchTerm = ""; state.locationFilter = event.venueKey; state.locationOpen = false;
+  state.section = listing.section; state.block = "All blocks"; state.classFilter = "all"; state.quantity = Math.min(2, quantity); state.sort = "recommended"; state.minPrice = 0; state.maxPrice = 2000; state.searchTerm = ""; state.locationFilter = event.venueKey; state.locationOpen = false;
   state.toast = "Your tickets are now listed in the marketplace."; render();
   $("#market")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -446,14 +459,18 @@ root.addEventListener("click", async event => {
   else if (action === "location-choice") {
     state.locationFilter = button.dataset.location; state.locationOpen = false; state.searchTerm = "";
     const matches = state.events.filter(item => state.locationFilter === "all" || item.venueKey === state.locationFilter);
-    if (matches.length && !matches.some(item => item.id === state.eventId)) { state.eventId = matches[0].id; state.section = "All sections"; state.step = 1; state.listing = null; }
+    if (matches.length && !matches.some(item => item.id === state.eventId)) { state.eventId = matches[0].id; state.section = "All sections"; state.block = "All blocks"; state.step = 1; state.listing = null; }
     render();
-  } else if (action === "section") { state.section = state.section === button.dataset.section ? "All sections" : button.dataset.section; state.mapExpanded = false; document.body.classList.remove("map-open"); render(); }
-  else if (action === "expand-map") { state.section = "All sections"; state.mapExpanded = true; render(); $("[data-action=close-map]")?.focus(); }
+  } else if (action === "map-block") {
+    if (state.block === button.dataset.block) { state.section = "All sections"; state.block = "All blocks"; }
+    else { state.section = button.dataset.area; state.block = button.dataset.block; }
+    state.mapExpanded = false; document.body.classList.remove("map-open"); render();
+  }
+  else if (action === "expand-map") { state.section = "All sections"; state.block = "All blocks"; state.mapExpanded = true; render(); $("[data-action=close-map]")?.focus(); }
   else if (action === "close-map") { state.mapExpanded = false; document.body.classList.remove("map-open"); render(); $("[data-action=expand-map]")?.focus(); }
-  else if (action === "clear-section") { state.section = "All sections"; render(); }
+  else if (action === "clear-section") { state.section = "All sections"; state.block = "All blocks"; render(); }
   else if (action === "class-filter") { state.classFilter = button.dataset.filter; render(); }
-  else if (action === "clear-filters") { state.section = "All sections"; state.classFilter = "all"; state.minPrice = 0; state.maxPrice = 2000; state.quantity = 2; render(); }
+  else if (action === "clear-filters") { state.section = "All sections"; state.block = "All blocks"; state.classFilter = "all"; state.minPrice = 0; state.maxPrice = 2000; state.quantity = 2; render(); }
   else if (action === "choose-listing") { state.listing = currentEvent().listings.find(item => item.id === button.dataset.id) || null; setStep(2); }
   else if (action === "step") setStep(Number(button.dataset.step));
   else if (action === "begin-checkout") setStep(3);
@@ -461,7 +478,7 @@ root.addEventListener("click", async event => {
   else if (action === "account") { state.mapExpanded = false; navigateToPage("account"); }
   else if (action === "admin") { state.mapExpanded = false; navigateToPage("admin"); }
   else if (action === "go-back") returnToPreviousPage();
-  else if (action === "go-home") { resetPageHistory(); state.page = "home"; state.sellDraft = null; state.step = 1; state.listing = null; state.receipt = null; state.mapExpanded = false; document.body.classList.remove("map-open"); render(); }
+  else if (action === "go-home") { resetPageHistory(); state.page = "home"; state.sellDraft = null; state.step = 1; state.listing = null; state.receipt = null; state.section = "All sections"; state.block = "All blocks"; state.mapExpanded = false; document.body.classList.remove("map-open"); render(); }
   else if (action === "toggle-all-shows") { state.showAllEvents = !state.showAllEvents; render(); $("#shows")?.scrollIntoView({ behavior: "smooth", block: "start" }); }
   else if (action === "remove-listing") {
     const listingId = button.dataset.id;
@@ -476,7 +493,7 @@ root.addEventListener("click", async event => {
   }
   else if (action === "manage") { event.preventDefault(); resetPageHistory(); state.booking = null; setStep(4); }
   else if (action === "show-booking") { resetPageHistory(); state.bookingId = state.receipt?.id || ""; state.booking = state.receipt; setStep(4); }
-  else if (action === "new-search") { resetPageHistory(); state.listing = null; state.receipt = null; state.section = "All sections"; setStep(1); }
+  else if (action === "new-search") { resetPageHistory(); state.listing = null; state.receipt = null; state.section = "All sections"; state.block = "All blocks"; setStep(1); }
   else if (action === "cancel-booking") await cancelBooking();
   else if (action === "dismiss") { state.toast = ""; render(); }
   else if (action === "map-help") toast(`Select a ${currentEvent().venue} zone to filter this show’s sample listings. The map is schematic; check the event organizer for the final seat plan.`);
@@ -490,12 +507,17 @@ root.addEventListener("keydown", event => {
   if (zone && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); zone.click(); }
 });root.addEventListener("change", event => {
   const target = event.target;
-  if (target.dataset.change === "ticket-location") {
-    state.locationFilter = target.value;
-    state.locationOpen = false;
-    const matches = state.events.filter(item => state.locationFilter === "all" || item.venueKey === state.locationFilter);
-    if (matches.length && !matches.some(item => item.id === state.eventId)) selectShowForTickets(matches[0]);
-    else render();
+  if (target.dataset.change === "area") {
+    state.section = target.value;
+    state.block = "All blocks";
+    render();
+    return;
+  }
+  if (target.dataset.change === "block") {
+    const block = venueMapBlocks(currentEvent().venueKey).find(item => item.key === target.value);
+    state.block = block?.key || "All blocks";
+    if (block) state.section = block.area;
+    render();
     return;
   }
   if (target.dataset.change === "concert") {
@@ -514,7 +536,6 @@ root.addEventListener("keydown", event => {
     return;
   }
   if (target.dataset.change === "quantity") state.quantity = Number(target.value);
-  else if (target.dataset.change === "section") state.section = target.value;
   else if (target.dataset.change === "sort") state.sort = target.value;
   else if (target.dataset.change === "min-price") { state.minPrice = Number(target.value); if (state.minPrice > state.maxPrice) state.maxPrice = state.minPrice; }
   else if (target.dataset.change === "max-price") { state.maxPrice = Number(target.value); if (state.maxPrice < state.minPrice) state.minPrice = state.maxPrice; }
