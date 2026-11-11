@@ -438,9 +438,7 @@ body.map-open{overflow:hidden}
   .filter-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .filter-row .sort-filter{grid-column:1/-1}
 }
-@media(min-width:761px){.filter-row{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:761px){.filter-row{grid-template-columns:minmax(130px,1.3fr) minmax(100px,1fr) minmax(70px,.65fr) minmax(120px,1.2fr) minmax(110px,1.1fr);gap:8px}}
 @media(max-width:760px){
-  .filter-row .area-filter{grid-column:1;grid-row:3}
-  .filter-row .section-filter{grid-column:2;grid-row:3}
-  .filter-row .sort-filter{grid-column:1/-1;grid-row:4}
+  .filter-row .sort-filter{grid-column:1/-1;grid-row:3}
 }
