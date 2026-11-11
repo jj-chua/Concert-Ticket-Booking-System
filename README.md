@@ -64,4 +64,36 @@ The endpoint should be protected by administrator authentication and return an o
 }
 ```
 
-The Admin page displays the audit result returned by the backend; it does not infer a successful release from a cancelled order status alone.
+* **Response:** `200 OK` with `{"status": "SUCCESS", "message": "Notification dispatched"}`
+
+---
+
+## 4. Partial Failure & Fault Tolerance Testing
+
+1. **Normal Flow:** Ensure all services are active. Complete a booking from the Client UI; the Notification Service logs:
+
+   ```text
+   [NOTIF WORKER] Successfully processed CONFIRMED for user@example.com | Booking ID: B104 | Seats: ['C4']
+   ```
+
+2. **Simulate Partial Failure:** Kill/stop the Notification Service terminal (`Ctrl + C` or `docker stop <notification_container_id>`).
+
+3. **Resilience Verification:** Submit a new booking from the Client UI while Notification Service is down.
+   * The Booking Service catches the connection timeout/failure and logs a `[WARN]` fallback message.
+   * The user still receives `201 Created` with a confirmed booking (demonstrating decoupled fault tolerance).
+
+---
+
+## Availability Service (Member 1)
+
+Owns seat state and prevents double booking. It uses `BEGIN IMMEDIATE` transactions, a conditional `UPDATE ... WHERE status='AVAILABLE'` and a `UNIQUE` constraint on each seat.
+
+```bash
+cd services/availability-service
+pip install -r requirements.txt
+python -m availability_service          # http://127.0.0.1:5002
+python -m pytest tests/test_availability.py -v
+```
+
+API contract, Booking Service integration steps and configuration: [`services/availability-service/README.md`](services/availability-service/README.md).
+Architecture, sequence and state diagrams: [`docs/diagrams/`](docs/diagrams/).

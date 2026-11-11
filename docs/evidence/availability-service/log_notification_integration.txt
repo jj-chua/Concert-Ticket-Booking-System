@@ -1,0 +1,22 @@
+INFO:     Started server process [25440]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:5003 (Press CTRL+C to quit)
+2026-11-11 13:44:19,708 [INFO] [NOTIF WORKER] Successfully processed CONFIRMED for guest.a@example.com | Booking ID: ECHO-B4F6641B | Seats: ['VIP-C-1', 'VIP-C-2']
+INFO:     127.0.0.1:56272 - "POST /notifications HTTP/1.1" 200 OK
+2026-11-11 13:44:20,260 [INFO] [NOTIF WORKER] Successfully processed CANCELLED for guest.a@example.com | Booking ID: ECHO-B4F6641B | Seats: ['VIP-C-1', 'VIP-C-2']
+INFO:     127.0.0.1:56275 - "POST /notifications HTTP/1.1" 200 OK
+2026-11-11 13:44:20,622 [INFO] [NOTIF WORKER] Successfully processed CONFIRMED for guest.b@example.com | Booking ID: ECHO-87CBDA3F | Seats: ['VIP-C-1', 'VIP-C-2']
+INFO:     127.0.0.1:56277 - "POST /notifications HTTP/1.1" 200 OK
+2026-11-11 13:44:22,659 [INFO] [NOTIF WORKER] Successfully processed CONFIRMED for user1@example.com | Booking ID: ECHO-B014D283 | Seats: ['PS2-J-21']
+INFO:     127.0.0.1:56294 - "POST /notifications HTTP/1.1" 200 OK
+INFO:     Started server process [29952]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:5003 (Press CTRL+C to quit)
+2026-11-11 13:44:26,957 [INFO] [NOTIF WORKER] Successfully processed CONFIRMED for guest.d@example.com | Booking ID: ECHO-E154BEF3 | Seats: ['PS2-J-1', 'PS2-J-2']
+INFO:     127.0.0.1:56302 - "POST /notifications HTTP/1.1" 200 OK
+2026-11-11 13:44:31,634 [INFO] [NOTIF WORKER] Successfully processed CONFIRMED for guest.f@example.com | Booking ID: ECHO-BA8E4575 | Seats: ['VVIP-A-1', 'VVIP-A-2']
+INFO:     127.0.0.1:56323 - "POST /notifications HTTP/1.1" 200 OK
+2026-11-11 13:44:36,422 [INFO] [NOTIF WORKER] Successfully processed CONFIRMED for guest.g@example.com | Booking ID: ECHO-A4E43A8E | Seats: ['PS1-D-1', 'PS1-D-2']
+INFO:     127.0.0.1:56327 - "POST /notifications HTTP/1.1" 200 OK

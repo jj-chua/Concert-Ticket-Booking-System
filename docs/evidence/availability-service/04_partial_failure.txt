@@ -1,0 +1,9 @@
+== Notification Service stopped
+POST /bookings (abby-ps1-01) -> 201 in 2368 ms  booking=ECHO-97F53D13  status=confirmed
+Availability seat state: {'PS1-F-1': 'HELD', 'PS1-F-2': 'HELD'}
+Booking Service log: [WARN] Notification service unavailable or timed out: . Queuing for retry or marking pending.
+
+== Notification Service restarted
+POST /bookings (abby-ps2-01) -> 201 in 363 ms  booking=ECHO-E154BEF3
+Notification log has the new booking: True
+Notification log has the booking made while it was down (ECHO-97F53D13): False
