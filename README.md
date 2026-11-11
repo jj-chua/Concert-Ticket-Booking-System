@@ -78,3 +78,19 @@ INFO:     Uvicorn running on http://0.0.0.0:5003 (Press CTRL+C to quit)
 3. **Resilience Verification:** Submit a new booking from the Client UI while Notification Service is down.
    * The Booking Service catches the connection timeout/failure and logs a `[WARN]` fallback message.
    * The user still receives `201 Created` with a confirmed booking (demonstrating decoupled fault tolerance).
+
+---
+
+## Availability Service (Member 1)
+
+Owns seat state and prevents double booking. It uses `BEGIN IMMEDIATE` transactions, a conditional `UPDATE ... WHERE status='AVAILABLE'` and a `UNIQUE` constraint on each seat.
+
+```bash
+cd services/availability-service
+pip install -r requirements.txt
+python -m availability_service          # http://127.0.0.1:5002
+python -m pytest tests/test_availability.py -v
+```
+
+API contract, Booking Service integration steps and configuration: [`services/availability-service/README.md`](services/availability-service/README.md).
+Architecture, sequence and state diagrams: [`docs/diagrams/`](docs/diagrams/).
