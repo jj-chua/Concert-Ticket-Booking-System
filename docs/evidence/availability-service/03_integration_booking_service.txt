@@ -1,0 +1,38 @@
+== 1. Client-shaped booking through the Booking Service (listing abby-vip-01, VIP row C, 2 tickets)
+POST /bookings -> 201 in 400 ms  booking=ECHO-B4F6641B  status=confirmed  seats=['VIP-C-1', 'VIP-C-2']
+GET /events/priscilla-abby-genting-2026/seats?section=VIP&row=C -> {'VIP-C-1': 'HELD', 'VIP-C-2': 'HELD'}  (4.3 ms)
+
+== 2. Look the booking up by ID
+GET /bookings/ECHO-B4F6641B -> 200  status=CONFIRMED
+
+== 3. Same request again with the same Idempotency-Key (client retry)
+POST /bookings -> 201 in 2 ms  booking=ECHO-B4F6641B  X-Cache=HIT
+
+== 4. A second customer tries the same listing
+POST /bookings -> 409  {'error': 'Seat already reserved', 'message': 'Those tickets are no longer available. Please choose another listing.'}
+
+== 5. Cancel the first booking
+DELETE /bookings/ECHO-B4F6641B -> 200  status=cancelled
+Availability seat state: {'VIP-C-1': 'AVAILABLE', 'VIP-C-2': 'AVAILABLE'}
+
+== 6. Second customer retries after the cancel
+POST /bookings -> 201  booking=ECHO-87CBDA3F
+Availability seat state: {'VIP-C-1': 'HELD', 'VIP-C-2': 'HELD'}
+
+== 7. Race: 8 customers book seat PS2-J-21 through the Booking Service at the same instant
+[13:44:21] 8 concurrent POSTs for seat PS2-J-21 (priscilla-abby-genting-2026) via the booking service
+
+request   HTTP     latency   result
+------------------------------------------------------------------------
+race-06   409     1570.2 ms   LOST -> Seat already reserved 
+race-03   409     1571.2 ms   LOST -> Seat already reserved 
+race-04   409     1571.2 ms   LOST -> Seat already reserved 
+race-00   409     1571.3 ms   LOST -> Seat already reserved 
+race-05   409     1571.4 ms   LOST -> Seat already reserved 
+race-02   409     1571.5 ms   LOST -> Seat already reserved 
+race-07   409     1572.4 ms   LOST -> Seat already reserved 
+race-01   201     1576.6 ms   WON  -> confirmed booking ECHO-B014D283
+------------------------------------------------------------------------
+successful: 1   rejected with 409: 7   other: 0
+final state of PS2-J-21: HELD
+RESULT: PASS - no double booking

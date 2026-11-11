@@ -1,0 +1,78 @@
+INFO:     Started server process [16204]
+INFO:     Waiting for application startup.
+2026-11-11 13:44:18,367 [INFO] [booking-service:16204] Bookings database schema initialized.
+2026-11-11 13:44:18,367 [INFO] [booking-service:16204] Booking Service initialized on port 5001. Downstreams: Availability=http://127.0.0.1:5002, Notification=http://127.0.0.1:5003
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:5001 (Press CTRL+C to quit)
+2026-11-11 13:44:19,534 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 200 OK"
+2026-11-11 13:44:19,709 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5003/notifications "HTTP/1.1 200 OK"
+2026-11-11 13:44:19,710 [INFO] [booking-service:16204] Notification delivered for booking ECHO-B4F6641B (CONFIRMED)
+2026-11-11 13:44:19,711 [INFO] [booking-service:16204] [BOOKING CONFIRMED] Booking ECHO-B4F6641B created for guest.a@example.com | Seats: ['VIP-C-1', 'VIP-C-2']
+INFO:     127.0.0.1:56269 - "POST /bookings HTTP/1.1" 201 Created
+INFO:     127.0.0.1:56269 - "GET /bookings/ECHO-B4F6641B HTTP/1.1" 200 OK
+2026-11-11 13:44:19,722 [INFO] [booking-service:16204] [IDEMPOTENT HIT] Key: 6580b0bf-e707-4962-aba4-ad53d064a499 | Returning cached response.
+INFO:     127.0.0.1:56269 - "POST /bookings HTTP/1.1" 201 Created
+2026-11-11 13:44:19,903 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 409 Conflict"
+2026-11-11 13:44:19,904 [WARNING] [booking-service:16204] [CONCURRENCY CONFLICT] Availability service returned 409 Conflict for ['VIP-C-1', 'VIP-C-2'].
+INFO:     127.0.0.1:56269 - "POST /bookings HTTP/1.1" 409 Conflict
+2026-11-11 13:44:20,088 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/release "HTTP/1.1 200 OK"
+2026-11-11 13:44:20,261 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5003/notifications "HTTP/1.1 200 OK"
+2026-11-11 13:44:20,262 [INFO] [booking-service:16204] Notification delivered for booking ECHO-B4F6641B (CANCELLED)
+2026-11-11 13:44:20,262 [INFO] [booking-service:16204] [BOOKING CANCELLED] Booking ECHO-B4F6641B successfully cancelled.
+INFO:     127.0.0.1:56269 - "DELETE /bookings/ECHO-B4F6641B HTTP/1.1" 200 OK
+2026-11-11 13:44:20,449 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 200 OK"
+2026-11-11 13:44:20,622 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5003/notifications "HTTP/1.1 200 OK"
+2026-11-11 13:44:20,623 [INFO] [booking-service:16204] Notification delivered for booking ECHO-87CBDA3F (CONFIRMED)
+2026-11-11 13:44:20,624 [INFO] [booking-service:16204] [BOOKING CONFIRMED] Booking ECHO-87CBDA3F created for guest.b@example.com | Seats: ['VIP-C-1', 'VIP-C-2']
+INFO:     127.0.0.1:56269 - "POST /bookings HTTP/1.1" 201 Created
+2026-11-11 13:44:22,471 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 200 OK"
+2026-11-11 13:44:22,645 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 409 Conflict"
+2026-11-11 13:44:22,645 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 409 Conflict"
+2026-11-11 13:44:22,645 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 409 Conflict"
+2026-11-11 13:44:22,645 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 409 Conflict"
+2026-11-11 13:44:22,646 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 409 Conflict"
+2026-11-11 13:44:22,646 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 409 Conflict"
+2026-11-11 13:44:22,646 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 409 Conflict"
+2026-11-11 13:44:22,649 [WARNING] [booking-service:16204] [CONCURRENCY CONFLICT] Availability service returned 409 Conflict for ['PS2-J-21'].
+2026-11-11 13:44:22,650 [WARNING] [booking-service:16204] [CONCURRENCY CONFLICT] Availability service returned 409 Conflict for ['PS2-J-21'].
+2026-11-11 13:44:22,651 [WARNING] [booking-service:16204] [CONCURRENCY CONFLICT] Availability service returned 409 Conflict for ['PS2-J-21'].
+2026-11-11 13:44:22,652 [WARNING] [booking-service:16204] [CONCURRENCY CONFLICT] Availability service returned 409 Conflict for ['PS2-J-21'].
+2026-11-11 13:44:22,653 [WARNING] [booking-service:16204] [CONCURRENCY CONFLICT] Availability service returned 409 Conflict for ['PS2-J-21'].
+2026-11-11 13:44:22,653 [WARNING] [booking-service:16204] [CONCURRENCY CONFLICT] Availability service returned 409 Conflict for ['PS2-J-21'].
+2026-11-11 13:44:22,654 [WARNING] [booking-service:16204] [CONCURRENCY CONFLICT] Availability service returned 409 Conflict for ['PS2-J-21'].
+INFO:     127.0.0.1:56284 - "POST /bookings HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:56278 - "POST /bookings HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:56283 - "POST /bookings HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:56279 - "POST /bookings HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:56280 - "POST /bookings HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:56285 - "POST /bookings HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:56281 - "POST /bookings HTTP/1.1" 409 Conflict
+2026-11-11 13:44:22,660 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5003/notifications "HTTP/1.1 200 OK"
+2026-11-11 13:44:22,661 [INFO] [booking-service:16204] Notification delivered for booking ECHO-B014D283 (CONFIRMED)
+2026-11-11 13:44:22,661 [INFO] [booking-service:16204] [BOOKING CONFIRMED] Booking ECHO-B014D283 created for user1@example.com | Seats: ['PS2-J-21']
+INFO:     127.0.0.1:56282 - "POST /bookings HTTP/1.1" 201 Created
+2026-11-11 13:44:22,883 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 200 OK"
+2026-11-11 13:44:25,064 [WARNING] [booking-service:16204] [WARN] Notification service unavailable or timed out: . Queuing for retry or marking pending.
+2026-11-11 13:44:25,064 [INFO] [booking-service:16204] [BOOKING CONFIRMED] Booking ECHO-97F53D13 created for guest.c@example.com | Seats: ['PS1-F-1', 'PS1-F-2']
+INFO:     127.0.0.1:56269 - "POST /bookings HTTP/1.1" 201 Created
+2026-11-11 13:44:26,782 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 200 OK"
+2026-11-11 13:44:26,958 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5003/notifications "HTTP/1.1 200 OK"
+2026-11-11 13:44:26,959 [INFO] [booking-service:16204] Notification delivered for booking ECHO-E154BEF3 (CONFIRMED)
+2026-11-11 13:44:26,959 [INFO] [booking-service:16204] [BOOKING CONFIRMED] Booking ECHO-E154BEF3 created for guest.d@example.com | Seats: ['PS2-J-1', 'PS2-J-2']
+INFO:     127.0.0.1:56269 - "POST /bookings HTTP/1.1" 201 Created
+INFO:     127.0.0.1:56313 - "GET /events HTTP/1.1" 200 OK
+2026-11-11 13:44:31,462 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 200 OK"
+2026-11-11 13:44:31,635 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5003/notifications "HTTP/1.1 200 OK"
+2026-11-11 13:44:31,636 [INFO] [booking-service:16204] Notification delivered for booking ECHO-BA8E4575 (CONFIRMED)
+2026-11-11 13:44:31,636 [INFO] [booking-service:16204] [BOOKING CONFIRMED] Booking ECHO-BA8E4575 created for guest.f@example.com | Seats: ['VVIP-A-1', 'VVIP-A-2']
+INFO:     127.0.0.1:56269 - "POST /bookings HTTP/1.1" 201 Created
+2026-11-11 13:44:31,844 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 409 Conflict"
+2026-11-11 13:44:31,845 [WARNING] [booking-service:16204] [CONCURRENCY CONFLICT] Availability service returned 409 Conflict for ['VVIP-A-1', 'VVIP-A-2'].
+INFO:     127.0.0.1:56313 - "POST /bookings HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:56313 - "GET /ticket-listings?eventId=priscilla-abby-genting-2026&quantity=2&section=All+sections HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56313 - "GET /ticket-listings?eventId=yy-wong-genting-2026&quantity=2&section=All+sections HTTP/1.1" 200 OK
+2026-11-11 13:44:36,246 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5002/seats/hold "HTTP/1.1 200 OK"
+2026-11-11 13:44:36,423 [INFO] [booking-service:16204] HTTP Request: POST http://127.0.0.1:5003/notifications "HTTP/1.1 200 OK"
+2026-11-11 13:44:36,424 [INFO] [booking-service:16204] Notification delivered for booking ECHO-A4E43A8E (CONFIRMED)
+2026-11-11 13:44:36,424 [INFO] [booking-service:16204] [BOOKING CONFIRMED] Booking ECHO-A4E43A8E created for guest.g@example.com | Seats: ['PS1-D-1', 'PS1-D-2']
+INFO:     127.0.0.1:56313 - "POST /bookings HTTP/1.1" 201 Created
