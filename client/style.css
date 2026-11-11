@@ -484,5 +484,7 @@ body.map-open{overflow:hidden}
 .payment-apple{background:#fff}.payment-apple svg{width:18px;height:18px;fill:#111}.payment-wechat{position:relative;background:#eff9ef}.payment-wechat i{width:16px;height:13px;border-radius:50%;background:#35a853;display:block}.payment-wechat i+i{width:12px;height:10px;margin:8px 0 0 -9px;background:#8bc34a;border:1px solid #eff9ef}.payment-alipay{background:#e9f5ff;color:#1677d2;font-size:19px;font-style:italic}
 .payment-check{margin-left:auto}
 .market-section .ticket-age-note{margin:0 0 9px;color:#716b77;font-size:12px;line-height:1.4}
+.market-section .ticket-row,.market-section .ticket-age-note{display:flex;align-items:flex-start;gap:7px}
+.market-section .ticket-feature-icon{width:16px;height:16px;flex:none;fill:none;stroke:#684191;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-top:1px}
 @media(max-width:760px){.market-section .market-heading h2{font-size:28px}.market-section .card-heading h2,.market-section .listings-toolbar h2{font-size:20px}.market-section .filter-row select{font-size:12px}.market-section .ticket-row,.market-section .ticket-perks span,.market-section .ticket-stock{font-size:12px}}
 @media(max-width:760px){.market-section .ticket-age-note{font-size:11px}}
