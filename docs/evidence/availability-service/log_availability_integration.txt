@@ -1,0 +1,53 @@
+INFO:     Started server process [13412]
+INFO:     Waiting for application startup.
+10:09:05.918 [availability] INFO Availability Service ready (db=availability.db, hold_ttl=300s)
+10:09:05.918 [availability] WARNING SERVICE_API_KEY is not set: seat changes are accepted without X-Service-Key. Set it on this service and the Booking Service outside local development.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:5002 (Press CTRL+C to quit)
+10:09:06.309 [availability] INFO rid=d99dd531 GET /health from 127.0.0.1 -> 200 (3.6 ms)
+INFO:     127.0.0.1:51867 - "GET /health HTTP/1.1" 200 OK
+10:09:06.563 [availability] INFO rid=cac8d960 HELD ['VIP-C-1', 'VIP-C-2'] for booking ECHO-FA612363 (ttl 300s)
+10:09:06.563 [availability] INFO rid=cac8d960 POST /seats/hold from 127.0.0.1 -> 200 (8.9 ms)
+INFO:     127.0.0.1:51875 - "POST /seats/hold HTTP/1.1" 200 OK
+10:09:06.755 [availability] INFO rid=6f9660cf GET /events/priscilla-abby-genting-2026/seats from 127.0.0.1 -> 200 (3.5 ms)
+INFO:     127.0.0.1:51867 - "GET /events/priscilla-abby-genting-2026/seats?section=VIP&row=C HTTP/1.1" 200 OK
+10:09:06.946 [availability] INFO rid=5ffa9359 CONFLICT booking ECHO-D39A3371 wanted ['VIP-C-1', 'VIP-C-2'], unavailable=['VIP-C-1', 'VIP-C-2']
+10:09:06.947 [availability] INFO rid=5ffa9359 POST /seats/hold from 127.0.0.1 -> 409 (6.4 ms)
+INFO:     127.0.0.1:51877 - "POST /seats/hold HTTP/1.1" 409 Conflict
+10:09:07.227 [availability] INFO rid=97d78a5e RELEASED ['VIP-C-1', 'VIP-C-2'] for booking ECHO-FA612363
+10:09:07.227 [availability] INFO rid=97d78a5e POST /seats/release from 127.0.0.1 -> 200 (88.8 ms)
+INFO:     127.0.0.1:51878 - "POST /seats/release HTTP/1.1" 200 OK
+10:09:07.424 [availability] INFO rid=3c00662e GET /events/priscilla-abby-genting-2026/seats from 127.0.0.1 -> 200 (2.7 ms)
+INFO:     127.0.0.1:51867 - "GET /events/priscilla-abby-genting-2026/seats?section=VIP&row=C HTTP/1.1" 200 OK
+10:09:07.618 [availability] INFO rid=afaca2d0 HELD ['VIP-C-1', 'VIP-C-2'] for booking ECHO-14472DF7 (ttl 300s)
+10:09:07.618 [availability] INFO rid=afaca2d0 POST /seats/hold from 127.0.0.1 -> 200 (8.0 ms)
+INFO:     127.0.0.1:51880 - "POST /seats/hold HTTP/1.1" 200 OK
+10:09:07.810 [availability] INFO rid=40347d26 GET /events/priscilla-abby-genting-2026/seats from 127.0.0.1 -> 200 (3.0 ms)
+INFO:     127.0.0.1:51867 - "GET /events/priscilla-abby-genting-2026/seats?section=VIP&row=C HTTP/1.1" 200 OK
+10:09:09.780 [availability] INFO rid=e9aa243c HELD ['PS2-J-21'] for booking ECHO-DD3ADE76 (ttl 300s)
+10:09:09.781 [availability] INFO rid=e9aa243c POST /seats/hold from 127.0.0.1 -> 200 (5.7 ms)
+INFO:     127.0.0.1:51891 - "POST /seats/hold HTTP/1.1" 200 OK
+10:09:09.785 [availability] INFO rid=613906a5 CONFLICT booking ECHO-F424EB3A wanted ['PS2-J-21'], unavailable=['PS2-J-21']
+10:09:09.786 [availability] INFO rid=613906a5 POST /seats/hold from 127.0.0.1 -> 409 (10.9 ms)
+INFO:     127.0.0.1:51890 - "POST /seats/hold HTTP/1.1" 409 Conflict
+10:09:09.794 [availability] INFO rid=f9aa6dbe CONFLICT booking ECHO-C6ADDDB0 wanted ['PS2-J-21'], unavailable=['PS2-J-21']
+10:09:09.794 [availability] INFO rid=f9aa6dbe POST /seats/hold from 127.0.0.1 -> 409 (18.3 ms)
+INFO:     127.0.0.1:51892 - "POST /seats/hold HTTP/1.1" 409 Conflict
+10:09:09.803 [availability] INFO rid=9345fc8b CONFLICT booking ECHO-D6001704 wanted ['PS2-J-21'], unavailable=['PS2-J-21']
+10:09:09.804 [availability] INFO rid=9345fc8b POST /seats/hold from 127.0.0.1 -> 409 (24.6 ms)
+INFO:     127.0.0.1:51894 - "POST /seats/hold HTTP/1.1" 409 Conflict
+10:09:09.804 [availability] INFO rid=f2cf3cf4 CONFLICT booking ECHO-0D119EDC wanted ['PS2-J-21'], unavailable=['PS2-J-21']
+10:09:09.805 [availability] INFO rid=dbd90308 CONFLICT booking ECHO-5E695C62 wanted ['PS2-J-21'], unavailable=['PS2-J-21']
+10:09:09.805 [availability] INFO rid=f2cf3cf4 POST /seats/hold from 127.0.0.1 -> 409 (27.9 ms)
+INFO:     127.0.0.1:51893 - "POST /seats/hold HTTP/1.1" 409 Conflict
+10:09:09.805 [availability] INFO rid=dbd90308 POST /seats/hold from 127.0.0.1 -> 409 (26.0 ms)
+INFO:     127.0.0.1:51895 - "POST /seats/hold HTTP/1.1" 409 Conflict
+10:09:09.819 [availability] INFO rid=480fa356 CONFLICT booking ECHO-3EEF3752 wanted ['PS2-J-21'], unavailable=['PS2-J-21']
+10:09:09.820 [availability] INFO rid=480fa356 POST /seats/hold from 127.0.0.1 -> 409 (37.8 ms)
+INFO:     127.0.0.1:51897 - "POST /seats/hold HTTP/1.1" 409 Conflict
+10:09:09.837 [availability] INFO rid=10feaa97 CONFLICT booking ECHO-BB1FC227 wanted ['PS2-J-21'], unavailable=['PS2-J-21']
+10:09:09.839 [availability] INFO rid=10feaa97 POST /seats/hold from 127.0.0.1 -> 409 (58.4 ms)
+INFO:     127.0.0.1:51896 - "POST /seats/hold HTTP/1.1" 409 Conflict
+10:09:10.007 [availability] INFO rid=34929921 GET /events/priscilla-abby-genting-2026/seats from 127.0.0.1 -> 200 (3.1 ms)
+INFO:     127.0.0.1:51899 - "GET /events/priscilla-abby-genting-2026/seats?section=PS2&row=J HTTP/1.1" 200 OK
+00 (3.1 ms)

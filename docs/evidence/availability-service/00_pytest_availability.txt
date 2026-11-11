@@ -2,23 +2,29 @@
 platform win32 -- Python 3.13.5, pytest-9.2.0, pluggy-1.7.0 -- <venv>\Scripts\python.exe
 rootdir: <repo>\services\availability-service
 plugins: anyio-4.16.0
-collecting ... collected 16 items
+collecting ... collected 22 items
 
-tests/test_availability.py::test_seat_map_lists_48_available_seats PASSED [  6%]
-tests/test_availability.py::test_unknown_showtime_returns_404 PASSED     [ 12%]
-tests/test_availability.py::test_hold_then_conflict PASSED               [ 18%]
-tests/test_availability.py::test_multi_seat_hold_is_all_or_nothing PASSED [ 25%]
+tests/test_availability.py::test_event_list_matches_client_events PASSED [  4%]
+tests/test_availability.py::test_seat_map_can_be_filtered_by_section_and_row PASSED [  9%]
+tests/test_availability.py::test_unknown_event_returns_404 PASSED        [ 13%]
+tests/test_availability.py::test_unknown_seat_returns_404 PASSED         [ 18%]
+tests/test_availability.py::test_hold_then_conflict PASSED               [ 22%]
+tests/test_availability.py::test_multi_seat_hold_is_all_or_nothing PASSED [ 27%]
 tests/test_availability.py::test_same_booking_retry_is_idempotent PASSED [ 31%]
-tests/test_availability.py::test_confirm_and_release_cycle PASSED        [ 37%]
-tests/test_availability.py::test_confirm_without_hold_is_rejected PASSED [ 43%]
+tests/test_availability.py::test_standing_and_category_labels PASSED     [ 36%]
+tests/test_availability.py::test_confirm_and_release_cycle PASSED        [ 40%]
+tests/test_availability.py::test_confirm_without_hold_is_rejected PASSED [ 45%]
 tests/test_availability.py::test_expired_hold_is_released PASSED         [ 50%]
-tests/test_availability.py::test_invalid_input_rejected_with_422[body0] PASSED [ 56%]
-tests/test_availability.py::test_invalid_input_rejected_with_422[body1] PASSED [ 62%]
-tests/test_availability.py::test_invalid_input_rejected_with_422[body2] PASSED [ 68%]
-tests/test_availability.py::test_invalid_input_rejected_with_422[body3] PASSED [ 75%]
+tests/test_availability.py::test_hold_with_confirm_books_in_one_step_and_never_expires PASSED [ 54%]
+tests/test_availability.py::test_accepts_booking_service_payload PASSED  [ 59%]
+tests/test_availability.py::test_invalid_input_rejected_with_422[body0] PASSED [ 63%]
+tests/test_availability.py::test_invalid_input_rejected_with_422[body1] PASSED [ 68%]
+tests/test_availability.py::test_invalid_input_rejected_with_422[body2] PASSED [ 72%]
+tests/test_availability.py::test_invalid_input_rejected_with_422[body3] PASSED [ 77%]
 tests/test_availability.py::test_invalid_input_rejected_with_422[body4] PASSED [ 81%]
-tests/test_availability.py::test_invalid_input_rejected_with_422[body5] PASSED [ 87%]
-tests/test_availability.py::test_write_needs_service_key PASSED          [ 93%]
+tests/test_availability.py::test_invalid_input_rejected_with_422[body5] PASSED [ 86%]
+tests/test_availability.py::test_write_needs_service_key PASSED          [ 90%]
+tests/test_availability.py::test_key_check_off_when_no_key_configured PASSED [ 95%]
 tests/test_availability.py::test_parallel_requests_same_seat_only_one_wins[20] PASSED [100%]
 
 ============================== warnings summary ===============================
@@ -27,4 +33,4 @@ tests/test_availability.py::test_parallel_requests_same_seat_only_one_wins[20] P
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================== 16 passed, 1 warning in 2.48s ========================
+======================= 22 passed, 1 warning in 38.02s ========================

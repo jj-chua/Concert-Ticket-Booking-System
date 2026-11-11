@@ -61,7 +61,7 @@ def architecture():
     box(ax, 0.41, 0.17, 0.21, 0.14, "Notification Service", "FastAPI · port 5003\nidempotent consumer", fc=C_NOTE)
 
     box(ax, 0.43, 0.56, 0.17, 0.10, "booking.db", "SQLite · bookings, outbox", fc=C_DB, tsize=9)
-    box(ax, 0.76, 0.56, 0.17, 0.10, "availability.db", "SQLite · showtimes, seats", fc=C_DB, tsize=9)
+    box(ax, 0.76, 0.56, 0.17, 0.10, "availability.db", "SQLite · events, seats", fc=C_DB, tsize=9)
     box(ax, 0.43, 0.065, 0.17, 0.07, "notification.db + log", "", fc=C_DB, tsize=8.5)
 
     # data access (local)
@@ -81,7 +81,7 @@ def architecture():
     # client -> availability (read only), routed over the top
     ax.add_patch(FancyArrowPatch((0.17, 0.89), (0.845, 0.89), connectionstyle="arc3,rad=-0.18",
                                  arrowstyle="-|>", mutation_scale=11, color="#2457c5", lw=1.3))
-    ax.text(0.51, 0.985, "HTTP GET /showtimes/{id}/seats  (public, read-only seat map)", ha="center", fontsize=7.6,
+    ax.text(0.51, 0.985, "HTTP GET /events/{id}/seats  (public, read-only seat map)", ha="center", fontsize=7.6,
             color="#2457c5", bbox=dict(fc="white", ec="none", pad=1))
     # booking -> notification
     arrow(ax, (0.515, 0.56), (0.515, 0.32), color="#7a3db8")
@@ -146,15 +146,15 @@ def sequence():
         ax.text(x0 + 0.06, yy - 0.004, guard, fontsize=7.4, va="top", color=MUTED, style="italic")
 
     # 1. availability check
-    msg(0, 3, "1  GET /showtimes/1/seats")
+    msg(0, 3, "1  GET /events/{id}/seats?section=VIP")
     msg(3, 4, "2  SELECT seat, status")
     msg(4, 3, "rows", ret=True, dy=0.03)
-    msg(3, 0, "3  200 OK  seat map (C4 = AVAILABLE)", ret=True)
+    msg(3, 0, "3  200 OK  seat map (VIP-C-11 = AVAILABLE)", ret=True)
     # 2. booking request
-    msg(0, 1, "4  POST /bookings  {showtime 1, seats [C4]}  Idempotency-Key: K", dy=0.045, left=True)
+    msg(0, 1, "4  POST /bookings  {eventId, seat_ids [VIP-C-11]}  Idempotency-Key: K", dy=0.045, left=True)
     msg(1, 2, "5  INSERT booking PENDING  (UNIQUE key K)")
-    msg(1, 3, "6  POST /seats/hold  {C4, booking_id}  X-Service-Key")
-    msg(3, 4, "7  BEGIN IMMEDIATE; UPDATE seats SET status='HELD'\nWHERE id = C4 AND status = 'AVAILABLE'; COMMIT",
+    msg(1, 3, "6  POST /seats/hold  {event_id, [VIP-C-11], booking_id}  X-Service-Key")
+    msg(3, 4, "7  BEGIN IMMEDIATE; UPDATE seats SET status='HELD'\nWHERE seat = VIP-C-11 AND status = 'AVAILABLE'; COMMIT",
         dy=0.052)
     alt_top = y[0] - 0.012
     msg(4, 3, "rowcount = 1", ret=True, dy=0.035)
@@ -171,9 +171,9 @@ def sequence():
     divider(div1, "[seat already HELD / BOOKED]")
     y[0] = div1 - 0.005
     msg(4, 3, "rowcount = 0  ->  ROLLBACK", ret=True, color="#c0392b", dy=0.03)
-    msg(3, 1, "409 Conflict  (problem+json, unavailable_seats [C4])", ret=True, color="#c0392b")
+    msg(3, 1, "409 Conflict  (problem+json, unavailable_seats [VIP-C-11])", ret=True, color="#c0392b")
     msg(1, 2, "status REJECTED, store response for key K", color="#c0392b", dy=0.034)
-    msg(1, 0, "409 Conflict  'Seat C4 is no longer available'", ret=True, color="#c0392b", dy=0.034)
+    msg(1, 0, "409 Conflict  'Those tickets are no longer available'", ret=True, color="#c0392b", dy=0.034)
     alt_bot = y[0] - 0.015
     frame(alt_top, alt_bot, "alt", "[seat still AVAILABLE]")
     # partial failure fragment
