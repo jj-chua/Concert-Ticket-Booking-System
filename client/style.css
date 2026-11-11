@@ -464,3 +464,23 @@ body.map-open{overflow:hidden}
 .checkout-hold-modal h2{margin:9px 0 10px;color:#25202e;font-size:26px;line-height:1.15}.checkout-hold-modal p{margin:0 auto 24px;max-width:350px;color:#696471;font-size:14px;line-height:1.55}.checkout-hold-modal .primary-btn{min-width:160px;font-size:15px}.hold-cancel{display:block;margin:14px auto 0;border:0;background:none;color:#6c6674;font-size:13px;font-weight:700;padding:8px 14px}.checkout-countdown{padding:9px 13px;border-radius:8px;background:#f8edf0;color:#8e3443;font-size:12px;font-weight:700;white-space:nowrap}.checkout-countdown strong{font-variant-numeric:tabular-nums;font-size:16px;margin-left:5px}
 .payment-methods{margin:20px 0 16px;padding:0;border:0}.payment-methods legend{margin-bottom:10px;font-size:12px;font-weight:800;color:#34303b}.payment-method-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.payment-option{min-height:44px;display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid #dedbe3;border-radius:7px;background:#fff;text-align:left;font-size:12px}.payment-option:hover{border-color:#9c78ba}.payment-option.selected{border-color:#684191;background:#f7f2fb;box-shadow:0 0 0 1px #684191}.payment-check{width:17px;height:17px;display:grid;place-items:center;border:1px solid #c9c3d0;border-radius:50%;color:#fff;font-size:11px;flex:none}.payment-option.selected .payment-check{border-color:#684191;background:#684191}.checkout-submit:disabled{opacity:.48;cursor:not-allowed}
 @media(max-width:760px){.checkout-hold-modal{padding:28px 22px 23px}.checkout-hold-modal h2{font-size:22px}.checkout-countdown{font-size:10px;padding:8px}.checkout-countdown strong{font-size:14px}}
+.market-section .market-heading h2{font-size:34px}
+.market-section .market-heading p,.market-section .listings-toolbar p{font-size:14px}
+.market-section .card-heading h2,.market-section .listings-toolbar h2{font-size:23px}
+.market-section .section-kicker{font-size:11px}
+.market-section .filter-row label span{font-size:12px}
+.market-section .filter-row select{height:42px;font-size:13px;padding-inline:9px}
+.market-section .filter-chip{font-size:12px;padding:9px 12px}
+.market-section .listing-header{font-size:13px}
+.market-section .ticket-section-line h3{font-size:19px}
+.market-section .ticket-row,.market-section .ticket-perks span,.market-section .ticket-stock{font-size:13px}
+.market-section .ticket-price strong{font-size:20px}
+.market-section .ticket-price span,.market-section .ticket-price small{font-size:12px}
+.market-section .ticket-cta{font-size:14px}
+.payment-option{gap:9px;padding:9px 11px}
+.payment-brand{width:39px;height:27px;flex:none;display:flex;align-items:center;justify-content:center;gap:2px;border-radius:5px;font-weight:900;font-size:12px;letter-spacing:-.3px;background:#f3f4f6;color:#30323a}
+.payment-tng{background:#e7f5ff;color:#0876bb;font-size:10px}.payment-visa{color:#1a1f71;font-style:italic;font-size:12px}.payment-mastercard{position:relative;background:#fff}.payment-mastercard i{width:17px;height:17px;border-radius:50%;background:#eb001b;display:block}.payment-mastercard i+i{margin-left:-7px;background:#f79e1b;mix-blend-mode:multiply}.payment-unionpay{color:#fff;background:linear-gradient(135deg,#cf142b 0 33%,#164b9b 33% 66%,#16854a 66%)}
+.payment-google{background:#fff;color:#4285f4}.payment-google b{font-size:21px;color:#4285f4}.payment-google small,.payment-apple small{font-size:9px;color:#4b4b4b}
+.payment-apple{background:#fff}.payment-apple svg{width:18px;height:18px;fill:#111}.payment-wechat{position:relative;background:#eff9ef}.payment-wechat i{width:16px;height:13px;border-radius:50%;background:#35a853;display:block}.payment-wechat i+i{width:12px;height:10px;margin:8px 0 0 -9px;background:#8bc34a;border:1px solid #eff9ef}.payment-alipay{background:#e9f5ff;color:#1677d2;font-size:19px;font-style:italic}
+.payment-check{margin-left:auto}
+@media(max-width:760px){.market-section .market-heading h2{font-size:28px}.market-section .card-heading h2,.market-section .listings-toolbar h2{font-size:20px}.market-section .filter-row select{font-size:12px}.market-section .ticket-row,.market-section .ticket-perks span,.market-section .ticket-stock{font-size:12px}}
