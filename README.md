@@ -20,6 +20,12 @@ Set `window.EVENT_API_BASE_URL` in [`client/config.js`](client/config.js) to the
 
 HTTP 409 booking conflicts show the server message, return the customer to ticket selection, and refresh available listings.
 
+## Booking cancellation and resale window
+
+Customers can cancel a booking through the UI up to and including 14 days before its concert date. Inside that 14-day window, the booking page disables cancellation and offers a prefilled resale form instead. A successful demo resale marks the booking as listed so it cannot be submitted for resale again. The live API should enforce the same date rule on `DELETE /bookings/{id}` and validate resale listings server-side; a browser-only check is not an authorization boundary.
+
+The seller form asks for the concert, show date/time, and ticket quantity. Demo pricing and seller contact details are filled from the event and the saved member profile. The booking page’s **History** shortcut opens the member account’s purchased-ticket history.
+
 ## Holds, timeout release, and admin audit
 
 The current client is a prototype. Demo orders are saved in one browser and are confirmed immediately; there is no payment flow, shared seat pool, or automatic timeout release in this repository. Closing a browser tab cannot safely release a live hold by itself.
@@ -59,4 +65,3 @@ The endpoint should be protected by administrator authentication and return an o
 ```
 
 The Admin page displays the audit result returned by the backend; it does not infer a successful release from a cancelled order status alone.
-
