@@ -613,8 +613,13 @@ async function cancelBooking() {
           saveSellerListings(saved);
         } else if (!current) ownerEvent.listings.push(snapshot);
       }
-    } else result = await request(`/bookings/${encodeURIComMethodInvocationException: 
-Line |
-   2 |  [Console]::Write([System.IO.File]::ReadAllText('client/app.js').Subst …
-     |  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Exception calling "Substring" with "2" argument(s): "Index and length must refer to a location within the string. (Parameter 'length')"
+    } else result = await request(`/bookings/${encodeURIComponent(id)}`, { method: "DELETE" });
+    state.booking = { ...state.booking, ...result, status: result?.status || "cancelled" };
+    state.toast = "Your booking has been cancelled.";
+  } catch (error) { state.toast = error.message || "Cancellation failed. Please try again."; }
+  state.cancelBusy = false; render();
+}
+
+restoreSellerListings();
+render();
+loadEvents();
