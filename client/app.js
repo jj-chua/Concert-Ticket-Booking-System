@@ -70,7 +70,7 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const money = value => `RM ${Number(value || 0).toFixed(2)}`;
 const uuid = () => window.crypto?.randomUUID?.() || "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => { const n = Math.random() * 16 | 0; return (c === "x" ? n : (n & 3 | 8)).toString(16); });
-const state = { page: "home", pageHistory: ["home"], sellDraft: null, step: 1, events: EVENTS, eventId: "priscilla-abby-genting-2026", section: "All sections", block: "All blocks", classFilter: "all", quantity: 2, sort: "recommended", minPrice: 0, maxPrice: 2000, listing: null, key: "", name: "", email: "", receipt: null, bookingId: "", booking: null, lookupBusy: false, cancelBusy: false, adminQuery: "", adminOrder: null, adminBusy: false, adminError: "", refreshing: false, toast: "", searchTerm: "", showAllEvents: false, searchOpen: false, locationFilter: "all", locationOpen: false, mapExpanded: false };
+const state = { page: "home", pageHistory: ["home"], sellDraft: null, step: 1, events: EVENTS, eventId: "priscilla-abby-genting-2026", section: "All sections", block: "All blocks", classFilter: "all", quantity: 2, sort: "recommended", minPrice: 0, maxPrice: 2000, listing: null, key: "", name: "", email: "", receipt: null, bookingId: "", booking: null, lookupBusy: false, cancelBusy: false, adminQuery: "", adminOrder: null, adminBusy: false, adminError: "", refreshing: false, toast: "", searchTerm: "", showAllEvents: false, searchOpen: false, locationFilter: "all", locationOpen: false, mapExpanded: false, checkoutModalOpen: false, checkoutLocking: false, checkoutDeadline: 0, checkoutTimer: null, paymentMethod: "" };
 const root = $("#root");
 const currentEvent = () => state.events.find(item => item.id === state.eventId) || EVENTS[0];
 const selectedCount = () => Number(state.quantity || 2);
@@ -263,7 +263,7 @@ function sectionMap() {
 
 function mapZoneButton(name, zone, event = currentEvent()) {
   const areaActive = state.section === name;
-  const available = event.listings?.some(item => item.section === name);
+  const available = event.listings?.some(item => item.section === name && Number(item.qty || 0) >= selectedCount());
   const listings = (event.listings || []).filter(item => item.section === name);
   const lowest = listings.length ? Math.min(...listings.map(item => item.price)) : null;
   const gentingColorTier = { VVIP: 0, VIP: 0, PS1: 1, PS2: 2, PS3: 3, PS4: 4 };
@@ -274,7 +274,7 @@ function mapZoneButton(name, zone, event = currentEvent()) {
     const blockKey = `${name}::${index}`;
     const active = state.block === blockKey || (state.block === "All blocks" && areaActive);
     const label = block.label || name;
-    return `<g class="seat-zone tier-${tier % 11} ${active ? "zone-active" : ""} ${available ? "zone-available" : "zone-empty"}" data-action="map-block" data-area="${esc(name)}" data-block="${esc(blockKey)}" role="button" tabindex="0" aria-pressed="${active}" aria-label="${esc(name)} · ${esc(label)}, ${priceLabel}"><title>${esc(name)} · ${esc(label)} · ${priceLabel}</title><path d="${block.d}"/>${block.label ? `<text x="${block.x}" y="${block.y}" text-anchor="middle" dominant-baseline="central">${esc(block.label)}</text>` : ""}</g>`;
+    return `<g class="seat-zone tier-${tier % 11} ${active ? "zone-active" : ""} ${available ? "zone-available" : "zone-empty"}" ${available ? `data-action="map-block" data-area="${esc(name)}" data-block="${esc(blockKey)}" role="button" tabindex="0" aria-pressed="${active}"` : `aria-disabled="true" tabindex="-1"`} aria-label="${esc(name)} · ${esc(label)}${available ? `, ${priceLabel}` : ", Sold out"}"><title>${esc(name)} · ${esc(label)} · ${available ? priceLabel : "Sold out"}</title><path d="${block.d}"/>${block.label ? `<text x="${block.x}" y="${block.y}" text-anchor="middle" dominant-baseline="central">${esc(block.label)}</text>` : ""}</g>`;
   }).join("");
 }
 
@@ -309,7 +309,9 @@ function listingPanel(event) {
     const blocks = venueMapBlocks(event.venueKey).filter(block => block.area === area);
     const areaValue = `area::${area}`;
     const areaSelected = state.section === area && state.block === "All blocks";
-    return `<optgroup label="${esc(area)}"><option value="${esc(areaValue)}" ${areaSelected ? "selected" : ""}>${esc(area)}</option>${blocks.map(block => `<option value="block::${esc(block.key)}" ${state.block === block.key ? "selected" : ""}>${esc(block.label)}</option>`).join("")}</optgroup>`;
+    const available = event.listings?.some(item => item.section === area && Number(item.qty || 0) >= selectedCount());
+    const unavailable = available ? "" : "disabled";
+    return `<optgroup label="${esc(area)}"><option value="${esc(areaValue)}" ${areaSelected ? "selected" : ""} ${unavailable}>${esc(area)}${available ? "" : " · SOLD OUT"}</option>${blocks.map(block => `<option value="block::${esc(block.key)}" ${state.block === block.key ? "selected" : ""} ${unavailable}>${esc(block.label)}${available ? "" : " · SOLD OUT"}</option>`).join("")}</optgroup>`;
   }).join("")}`;
   const filters = TIERS.map(item => `<button class="filter-chip ${state.classFilter === item.id ? "filter-active" : ""}" data-action="class-filter" data-filter="${item.id}">${item.name}</button>`).join("");
   return `<div class="market-grid"><section class="map-card ${state.mapExpanded ? "map-card-expanded" : ""}" role="${state.mapExpanded ? "dialog" : "region"}" aria-modal="${state.mapExpanded}" aria-label="${esc(event.venue)} ticket zones"><div class="card-heading"><div><span class="section-kicker">${esc(event.venue.toUpperCase())}</span><h2>Choose your zone</h2></div><button class="map-help" data-action="${state.mapExpanded ? "close-map" : "map-help"}" aria-label="${state.mapExpanded ? "Close map" : "Map information"}">${state.mapExpanded ? "×" : "?"}</button></div>${sectionMap()}${mapPriceLegend(event)}<div class="map-legend"><span><i class="legend-dot dot-available"></i>Listed zone · price-coded</span><span><i class="legend-dot dot-selected"></i>Selected zone</span><span><i class="legend-dot dot-none"></i>No sample offers</span></div>${!state.mapExpanded ? `<button class="clear-section map-expand-button" data-action="expand-map">Zoom in</button>` : ""}</section><button class="map-backdrop" data-action="close-map" aria-label="Close expanded venue map" ${state.mapExpanded ? "" : "hidden"}></button><section class="listings-column"><div class="listings-toolbar"><div><span class="section-kicker">${esc(event.name.toUpperCase())} · ${esc(event.venue.toUpperCase())}</span><h2>Tickets for this show</h2><p>${listings.length} demo listings · Prices shown per ticket</p></div><a class="official-link" href="${esc(event.source)}" target="_blank" rel="noopener">Official event info ↗</a></div><div class="filter-panel"><div class="filter-row"><label class="concert-filter"><span>Concert</span><select data-change="concert">${concertOptions(event)}</select></label><label class="date-filter"><span>Date</span><select data-change="date">${dateOptions(event)}</select></label><label class="quantity-filter"><span>Tickets</span><select data-change="quantity">${[1,2,3,4,5,6].map(n => `<option value="${n}" ${n === selectedCount() ? "selected" : ""}>${n}</option>`).join("")}</select></label><label class="area-filter"><span>Area</span><select data-change="area">${areaOptions}</select></label><label class="sort-filter"><span>Sort by</span><select data-change="sort"><option value="recommended" ${state.sort === "recommended" ? "selected" : ""}>Recommended</option><option value="price" ${state.sort === "price" ? "selected" : ""}>Lowest price</option><option value="best" ${state.sort === "best" ? "selected" : ""}>Best view</option></select></label></div><div class="filter-chips">${filters}</div><div class="price-filter"><label>Price per ticket <strong>${money(state.minPrice)} – ${money(state.maxPrice)}</strong></label><div><input aria-label="Minimum price" type="range" min="0" max="2000" step="25" value="${state.minPrice}" data-change="min-price"><input aria-label="Maximum price" type="range" min="100" max="2000" step="25" value="${state.maxPrice}" data-change="max-price"></div></div></div><div class="listing-header"><strong>${listings.length} listings</strong><span>Price includes estimated fees</span></div><div class="listing-results">${listings.length ? listings.map(listingCard).join("") : `<div class="empty-listings"><strong>No tickets match these filters.</strong><span>Try another section or ticket type.</span><button data-action="clear-filters">Clear filters</button></div>`}</div></section></div>`;
@@ -330,7 +332,15 @@ function checkoutView(event) {
   if (state.receipt) return `<section class="receipt-card"><div class="receipt-success"><span>✓</span><div class="section-kicker">BOOKING CONFIRMED</div><h2>Your night is booked.</h2><p>Your e-ticket details are below.</p></div><div class="receipt-paper"><div class="receipt-paper-top">${logo(30)}<span>ECHO LIVE · E-TICKET</span></div><div class="receipt-ref"><span>BOOKING REFERENCE</span><strong>${esc(state.receipt.id || "Reference unavailable")}</strong></div><div class="receipt-grid"><div><small>EVENT</small><strong>${esc(state.receipt.eventName || event.name)}</strong></div><div><small>VENUE</small><strong>${esc(state.receipt.venue || event.venue)}</strong></div><div><small>DATE / TIME</small><strong>${esc(state.receipt.date || event.date)} · ${esc(state.receipt.time || event.time)}</strong></div><div><small>SECTION / ROW</small><strong>${esc(state.receipt.section || state.listing?.section)} · ${esc(state.receipt.row || state.listing?.row)}</strong></div><div><small>QUANTITY</small><strong>${Number(state.receipt.quantity || state.quantity)} tickets</strong></div><div><small>TOTAL</small><strong>${money(state.receipt.total ?? state.listing?.price * state.quantity)}</strong></div></div></div><div class="receipt-actions"><button class="secondary-btn" data-action="show-booking">Manage booking</button><button class="primary-btn" data-action="new-search">Explore more shows&nbsp; →</button></div></section>`;
   const item = state.listing;
   if (!item) return `<section class="review-card"><h2>Choose a ticket first</h2><button class="primary-btn" data-action="step" data-step="1">Browse tickets →</button></section>`;
-  return `<section class="checkout-card"><div class="checkout-heading"><div><span class="section-kicker">FINAL STEP</span><h2>Checkout</h2><p>You're one step away from a live night out.</p></div><span class="secure-pill">✓ Secure checkout</span></div><div class="checkout-layout"><form class="checkout-form" id="checkout-form"><h3>Ticket delivery</h3><label>Full name<input required name="customerName" value="${esc(state.name)}" placeholder="Name on the booking"></label><label>Email address<input required name="customerEmail" type="email" value="${esc(state.email)}" placeholder="you@example.com"></label><div class="idempotency-note"><span>Request protection</span><code>${esc(state.key)}</code><b>READY</b></div><button class="primary-btn checkout-submit" type="submit">Confirm booking · ${money(item.price * selectedCount())}</button><p class="demo-terms">Prototype checkout only — no payment is collected.</p></form><aside class="checkout-summary"><span class="section-kicker">ORDER SUMMARY</span><h3>${esc(event.name)}</h3><p>${esc(event.date)} · ${esc(event.venue)}</p><div class="summary-line"><span>${esc(item.section)} · Row ${esc(item.row)} × ${selectedCount()}</span><strong>${money(item.price * selectedCount())}</strong></div><div class="summary-line"><span>Estimated fees</span><strong>Included</strong></div><div class="summary-total"><span>Total</span><strong>${money(item.price * selectedCount())}</strong></div><div class="summary-note">Demo ticket details stay in this browser.</div></aside></div><button class="secondary-btn checkout-back" data-action="step" data-step="2">← Back to review</button></section>`;
+  const paymentMethods = ["Touch and Go", "Visa", "Mastercard", "UnionPay", "Google Pay", "Apple Pay", "WeChat Pay", "Alipay"];
+  const paymentOptions = `<fieldset class="payment-methods"><legend>Payment method</legend><div class="payment-method-grid">${paymentMethods.map(method => `<button type="button" class="payment-option ${state.paymentMethod === method ? "selected" : ""}" data-action="payment-method" data-method="${esc(method)}" aria-pressed="${state.paymentMethod === method}"><span class="payment-check">${state.paymentMethod === method ? "✓" : ""}</span><strong>${esc(method)}</strong></button>`).join("")}</div></fieldset>`;
+  const remaining = Math.max(0, Math.ceil((state.checkoutDeadline - Date.now()) / 1000));
+  const countdown = `${String(Math.floor(remaining / 60)).padStart(2, "0")}:${String(remaining % 60).padStart(2, "0")}`;
+  return `<section class="checkout-card"><div class="checkout-heading"><div><span class="section-kicker">FINAL STEP</span><h2>Checkout</h2><p>You're one step away from a live night out.</p></div><span class="checkout-countdown">Tickets held for <strong>${countdown}</strong></span></div><div class="checkout-layout"><form class="checkout-form" id="checkout-form"><h3>Ticket delivery</h3><label>Full name<input required name="customerName" value="${esc(state.name)}" placeholder="Name on the booking"></label><label>Email address<input required name="customerEmail" type="email" value="${esc(state.email)}" placeholder="you@example.com"></label>${paymentOptions}<div class="idempotency-note"><span>Request protection</span><code>${esc(state.key)}</code><b>READY</b></div><button class="primary-btn checkout-submit" type="submit" ${!state.paymentMethod ? "disabled" : ""}>Confirm booking · ${money(item.price * selectedCount())}</button><p class="demo-terms">Prototype checkout only — no payment is collected.</p></form><aside class="checkout-summary"><span class="section-kicker">ORDER SUMMARY</span><h3>${esc(event.name)}</h3><p>${esc(event.date)} · ${esc(event.venue)}</p><div class="summary-line"><span>${esc(item.section)} · Row ${esc(item.row)} × ${selectedCount()}</span><strong>${money(item.price * selectedCount())}</strong></div><div class="summary-line"><span>Estimated fees</span><strong>Included</strong></div><div class="summary-total"><span>Total</span><strong>${money(item.price * selectedCount())}</strong></div><div class="summary-note">Demo ticket details stay in this browser.</div></aside></div><button class="secondary-btn checkout-back" data-action="leave-checkout">← Back to review</button></section>`;
+}
+
+function checkoutHoldModal() {
+  return `<div class="checkout-hold-backdrop"><section class="checkout-hold-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-hold-title"><div class="hold-lock ${state.checkoutLocking ? "locking" : ""}"><svg viewBox="0 0 48 48" aria-hidden="true"><path class="lock-shackle" d="M15 21v-7a9 9 0 0 1 18 0v7"/><rect x="10" y="20" width="28" height="22" rx="5"/><circle cx="24" cy="30" r="2"/><path d="M24 32v4"/></svg></div><span class="section-kicker">${state.checkoutLocking ? "SECURING YOUR SEATS" : "YOUR SEATS ARE READY"}</span><h2 id="checkout-hold-title">Complete your purchase within 10 minutes</h2><p>${state.checkoutLocking ? "Locking your selected tickets…" : "Start checkout to hold these tickets while you complete payment."}</p><button class="primary-btn" data-action="start-checkout" ${state.checkoutLocking ? "disabled" : ""}>${state.checkoutLocking ? "Securing tickets…" : "Start"}</button><button class="hold-cancel" data-action="cancel-checkout" ${state.checkoutLocking ? "disabled" : ""}>Cancel</button></section></div>`;
 }
 
 function bookingView() {
@@ -383,7 +393,7 @@ function render() {
   root.innerHTML = `<div class="app-shell"><header class="topbar ${state.searchOpen ? "search-open" : ""}"><a class="brand" href="#top">${logo()}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><div class="top-actions"><label class="search-box"><span>⌕</span><input name="eventSearch" value="${esc(state.searchTerm)}" placeholder="Artist, event or venue" aria-label="Search shows"></label>${locationPicker()}<button class="sell-button" data-action="sell">Sell</button><button class="account-button" data-action="account" aria-label="Account and my bookings" title="Account"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9.25"></circle><circle cx="12" cy="9" r="3"></circle><path d="M6.8 18.2c.7-2.7 2.7-4.2 5.2-4.2s4.5 1.5 5.2 4.2"></path></svg></button></div><button class="mobile-search" data-action="toggle-search" aria-label="Search">⌕</button></header><main id="top"><section class="event-hero"><img class="hero-photo" src="${esc(event.image)}" alt="${esc(event.imageAlt)}" decoding="async" fetchpriority="high" onerror="this.hidden=true"><div class="hero-shade"></div><div class="hero-inner"><div class="hero-event-copy"><div class="hero-tags"><span>${esc(event.tag)}</span><span class="live-tag">LIVE MUSIC</span></div><p class="hero-kicker">${esc(event.tour)}</p><h1>${esc(event.name)}</h1><p class="hero-meta">${esc(event.date)} <i></i> ${esc(event.venue)} <i></i> ${esc(event.area)}</p><p class="hero-time">${esc(event.time)} · ${esc(event.state === "SOLD OUT" ? "Official tickets sold out" : "Demo marketplace listings shown")}</p><a class="primary-btn hero-button" href="#market">Find tickets</a></div><div class="hero-poster-wrap">${posterImage(event, "hero-poster")}<span>OFFICIAL EVENT ARTWORK</span></div></div><div class="hero-bottom"><span><i class="live-dot"></i> ECHO LIVE PICKS</span><a href="${esc(event.source)}" target="_blank" rel="noopener">Official event details ↗</a></div></section>
       <section class="discovery" id="shows"><div class="discovery-head"><div><span class="section-kicker">UP NEXT · ALL VENUES</span><h2>Find your next live moment</h2><p>Live music across Resorts World Genting and Bukit Jalil.</p></div><button class="all-shows" data-action="toggle-all-shows">${state.showAllEvents ? "Show fewer shows" : "View all shows"}</button></div><div class="event-strip">${eventCards()}</div></section>
       <section class="market-section" id="market"><div class="market-heading"><div><span class="section-kicker">TICKETS FOR ${esc(event.name.toUpperCase())}</span><h2>Pick a spot. Feel every song.</h2><p>${esc(event.venue)} · ${esc(event.area)}</p></div><div class="event-status ${event.state === "SOLD OUT" ? "sold-out" : ""}"><i></i>${esc(event.state)}</div></div>${stepper()}${state.step === 1 ? listingPanel(event) : ""}${state.step === 2 ? reviewView(event) : ""}${state.step === 3 ? checkoutView(event) : ""}${state.step === 4 ? bookingView() : ""}</section>
-    </main><footer class="site-footer" id="footer"><a class="brand footer-brand" href="#top">${logo(32)}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><span>© ${new Date().getFullYear()} ECHO LIVE. All rights reserved.</span><div><a href="#footer">Help center</a><a href="#footer">Terms</a><a href="https://youtu.be/dQw4w9WgXcQ?si=SttXnPRIuduZt2Mv" target="_blank" rel="noopener">Privacy</a><button class="footer-admin-link" data-action="admin">Admin</button></div></footer>${state.toast ? `<div class="toast" role="status"><span>!</span>${esc(state.toast)}<button data-action="dismiss" aria-label="Dismiss">×</button></div>` : ""}</div>`;
+    </main><footer class="site-footer" id="footer"><a class="brand footer-brand" href="#top">${logo(32)}<span class="brand-name">ECHO LIVE<small>YOUR NIGHT. YOUR WAY.</small></span></a><span>© ${new Date().getFullYear()} ECHO LIVE. All rights reserved.</span><div><a href="#footer">Help center</a><a href="#footer">Terms</a><a href="https://youtu.be/dQw4w9WgXcQ?si=SttXnPRIuduZt2Mv" target="_blank" rel="noopener">Privacy</a><button class="footer-admin-link" data-action="admin">Admin</button></div></footer>${state.checkoutModalOpen ? checkoutHoldModal() : ""}${state.toast ? `<div class="toast" role="status"><span>!</span>${esc(state.toast)}<button data-action="dismiss" aria-label="Dismiss">×</button></div>` : ""}</div>`;
   const main = $("#top", root);
   if (state.page === "sell") main.innerHTML = sellView();
   else if (state.page === "account") main.innerHTML = accountView();
@@ -391,9 +401,40 @@ function render() {
 
 function setStep(step) {
   if (step === 2 && !state.listing) return;
-  if (step === 3 && !state.listing) return;
+  if (step === 3 && (!state.listing || !state.checkoutDeadline)) return;
+  if (step !== 3 && state.checkoutDeadline) stopCheckoutTimer();
   if (step === 3 && state.step !== 3) { state.key = uuid(); state.receipt = null; }
   state.step = step; render();
+}
+
+function stopCheckoutTimer() {
+  if (state.checkoutTimer) clearInterval(state.checkoutTimer);
+  state.checkoutTimer = null;
+  state.checkoutDeadline = 0;
+}
+
+function expireCheckoutHold() {
+  stopCheckoutTimer();
+  state.step = 1; state.listing = null; state.key = ""; state.paymentMethod = "";
+  state.section = "All sections"; state.block = "All blocks";
+  state.toast = "Your 10-minute checkout window expired. Please choose tickets again.";
+  render(); refreshListings();
+}
+
+function startCheckoutHold() {
+  if (!state.listing || state.checkoutLocking) return;
+  state.checkoutLocking = true; render();
+  setTimeout(() => {
+    if (!state.checkoutLocking) return;
+    state.checkoutLocking = false; state.checkoutModalOpen = false;
+    state.checkoutDeadline = Date.now() + 10 * 60 * 1000;
+    state.paymentMethod = "";
+    setStep(3);
+    state.checkoutTimer = setInterval(() => {
+      if (Date.now() >= state.checkoutDeadline) { expireCheckoutHold(); return; }
+      if (state.step === 3 && !state.receipt) render();
+    }, 1000);
+  }, 850);
 }
 
 async function refreshListings() {
@@ -471,8 +512,15 @@ root.addEventListener("click", async event => {
   else if (action === "class-filter") { state.classFilter = button.dataset.filter; render(); }
   else if (action === "clear-filters") { state.section = "All sections"; state.block = "All blocks"; state.classFilter = "all"; state.minPrice = 0; state.maxPrice = 2000; state.quantity = 2; render(); }
   else if (action === "choose-listing") { state.listing = currentEvent().listings.find(item => item.id === button.dataset.id) || null; setStep(2); }
-  else if (action === "step") setStep(Number(button.dataset.step));
-  else if (action === "begin-checkout") setStep(3);
+  else if (action === "step") {
+    if (Number(button.dataset.step) === 3 && state.step !== 3) { state.checkoutModalOpen = true; state.checkoutLocking = false; render(); }
+    else setStep(Number(button.dataset.step));
+  }
+  else if (action === "begin-checkout") { state.checkoutModalOpen = true; state.checkoutLocking = false; render(); }
+  else if (action === "start-checkout") startCheckoutHold();
+  else if (action === "cancel-checkout") { state.checkoutModalOpen = false; state.checkoutLocking = false; render(); }
+  else if (action === "payment-method") { state.paymentMethod = button.dataset.method; render(); }
+  else if (action === "leave-checkout") { stopCheckoutTimer(); state.step = 2; render(); }
   else if (action === "sell") { navigateToPage("sell"); }
   else if (action === "account") { state.mapExpanded = false; navigateToPage("account"); }
   else if (action === "admin") { state.mapExpanded = false; navigateToPage("admin"); }
@@ -557,8 +605,10 @@ root.addEventListener("submit", async event => {
 
 async function submitBooking() {
   if (!state.key || !state.listing) return;
+  if (!state.paymentMethod) { toast("Choose a payment method to continue."); return; }
+  if (!state.checkoutDeadline || Date.now() >= state.checkoutDeadline) { expireCheckoutHold(); return; }
   const event = currentEvent();
-  const payload = { eventId: event.id, eventName: event.name, venue: event.venue, date: event.date, time: event.time, section: state.listing.section, row: state.listing.row, ticketType: state.listing.badges.join(", "), listingId: state.listing.id, quantity: selectedCount(), customerName: state.name.trim(), email: state.email.trim(), total: state.listing.price * selectedCount() };
+  const payload = { eventId: event.id, eventName: event.name, venue: event.venue, date: event.date, time: event.time, section: state.listing.section, row: state.listing.row, ticketType: state.listing.badges.join(", "), listingId: state.listing.id, quantity: selectedCount(), customerName: state.name.trim(), email: state.email.trim(), paymentMethod: state.paymentMethod, total: state.listing.price * selectedCount() };
   try {
     let booking;
     if (DEMO_MODE) {
@@ -574,10 +624,12 @@ async function submitBooking() {
       }
     } else booking = await request("/bookings", { method: "POST", headers: { "Idempotency-Key": state.key }, body: JSON.stringify(payload) });
     state.receipt = { ...booking, id: booking.id || booking.bookingId || booking.booking_id, status: booking.status || "confirmed" };
+    stopCheckoutTimer();
     state.bookingId = state.receipt.id || "";
     toast("You're booked. Your e-ticket is ready.");
   } catch (error) {
     if (error.status === 409) {
+      stopCheckoutTimer();
       const details = error.data || {};
       state.toast = details.message || "Those tickets are no longer available. Please choose another listing.";
       state.step = 1; state.listing = null; render();
