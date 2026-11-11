@@ -115,6 +115,25 @@ troke:#91377c}
 .map-card-expanded .arena-map-svg{width:100%;max-height:calc(100vh - 230px)}
 .map-card-expanded .map-price-legend{grid-template-columns:repeat(5,minmax(0,1fr));max-height:100px;overflow:auto}
 @media(max-width:760px){.genting-map .seat-zone text{font-size:24px}.map-card-expanded .arena-map{max-height:none}.map-card-expanded .arena-map-svg{max-height:none}.map-card-expanded .map-price-legend{grid-template-columns:repeat(2,minmax(0,1fr));max-height:120px}.map-card-expanded{padding:14px 12px}}
+.unifi-map{background:#202020;border-color:#202020}
+.unifi-map .arena-map-svg{background:#202020;border-radius:7px}
+.unifi-map .axiata-canvas{fill:#202020}
+.unifi-map .seat-zone text{font-size:23px;font-weight:900;fill:#121212;stroke:none}
+.unifi-map .seat-zone.zone-empty text{fill:#686868}
+.unifi-map .seat-zone.zone-available.tier-0 path{fill:#fff200;stroke:#d2c500}
+.unifi-map .seat-zone.zone-available.tier-1 path{fill:#f5194b;stroke:#bb0f35}
+.unifi-map .seat-zone.zone-available.tier-2 path{fill:#ff941b;stroke:#c56b0d}
+.unifi-map .seat-zone.zone-available.tier-3 path{fill:#19dd54;stroke:#10a63d}
+.unifi-map .seat-zone.zone-active path{fill:#38204a;stroke:#fff;stroke-width:4}
+.unifi-map .seat-zone.zone-active text{fill:#fff;stroke:#38204a;stroke-width:3px}
+.axiata-price-title{fill:#f5f5f5;font:900 30px Arial,sans-serif;letter-spacing:.5px}
+.axiata-price-row text{fill:#141414;font:900 24px Arial,sans-serif;dominant-baseline:central}
+.axiata-fee-note,.axiata-seat-note,.axiata-map-note{fill:#eee;font:700 15px Arial,sans-serif}
+.axiata-stage{fill:#a8a8a8}.axiata-stage-label{fill:#fff;font:900 28px Arial,sans-serif;letter-spacing:2px;dominant-baseline:central}
+.axiata-stage-b{fill:#00d5e8}.axiata-stage-b-label{fill:#101010;font:900 24px Arial,sans-serif;dominant-baseline:central}
+.axiata-royal-box{fill:#173eae}.axiata-media-label{fill:#fff;font:900 12px Arial,sans-serif;letter-spacing:1px;dominant-baseline:central}
+.axiata-aisle-label{fill:#fff;font:800 13px Arial,sans-serif;dominant-baseline:central}
+@media(max-width:760px){.unifi-map .seat-zone text{font-size:25px}.axiata-price-title{font-size:28px}.axiata-price-row text{font-size:23px}.axiata-fee-note,.axiata-seat-note{font-size:16px}}
 /* Roomier layout, larger event artwork, and tighter content spacing */
 @media(min-width:761px){
   .event-hero{min-height:455px}
@@ -165,7 +184,8 @@ troke:#91377c}
 .sell-button{height:40px;padding:0 16px;border:1px solid #684191;border-radius:6px;background:#fff;color:#523277;font-size:14px;font-weight:800;white-space:nowrap;transition:background .15s,border-color .15s}
 .sell-button:hover{background:#f5effb;border-color:#523277}
 .sell-button:focus-visible,.account-button:focus-visible{outline:3px solid rgba(104,65,145,.25);outline-offset:2px}
-.account-button{width:42px;height:42px;padding:0;display:grid;place-items:center;border:1px solid #ded8e5;border-radius:50%;background:#fff;color:#49345d;cursor:pointer}
+.account-button{width:42px;height:42px;padding:0;display:grid;p
+lace-items:center;border:1px solid #ded8e5;border-radius:50%;background:#fff;color:#49345d;cursor:pointer}
 .account-button:hover{background:#f7f3fa;border-color:#bfaed0}
 .account-button svg{display:block;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:1030px){.top-actions{gap:9px}.search-box{width:min(190px,25vw)}}
@@ -188,8 +208,7 @@ troke:#91377c}
 .text-back{border:0;background:none;padding:5px 0;color:#685579;font-size:13px;font-weight:700;cursor:pointer}
 .text-back:hover{color:#38204a}
 .page-heading-layout{display:flex;align-items:center;gap:18px;margin:20px 0 27px}
-.page-heading-layout>.p
-age-heading{flex:1;min-width:0;margin:0}
+.page-heading-layout>.page-heading{flex:1;min-width:0;margin:0}
 .page-heading-layout .back-icon-button{flex:none;margin:0}
 .page-heading{margin:20px 0 27px}
 .page-heading h1{font-size:clamp(34px,4vw,46px);letter-spacing:-1.4px;margin:7px 0 8px;color:#241b2b}
@@ -226,7 +245,8 @@ age-heading{flex:1;min-width:0;margin:0}
 .profile-avatar{display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:linear-gradient(140deg,#805da0,#39234d);color:#fff;font-size:19px;font-weight:800}
 .profile-identity .section-kicker{font-size:9px}
 .profile-identity h2{font-size:20px;margin:5px 0 3px}
-.profile-identity p{font-size:12px;color:#827b88;margin:0}
+.profile-identity p{font-size:12px;color:#827b88;mar
+gin:0}
 .profile-form{padding-top:5px}
 .profile-form>label{font-size:12px;margin:13px 0}
 .profile-form input{height:42px;font-size:13px}
@@ -250,8 +270,7 @@ age-heading{flex:1;min-width:0;margin:0}
 .account-empty{padding:18px 0;color:#8a828e;font-size:12px;line-height:1.55}
 @media(max-width:900px){.sell-layout{grid-template-columns:1fr}.sell-side-card{position:static}.account-grid{grid-template-columns:minmax(250px,.8fr) minmax(0,1.2fr)}}
 @media(max-width:760px){
-  .top-actions
- .location-button,.top-actions .sell-button,.top-actions .account-button{height:36px}
+  .top-actions .location-button,.top-actions .sell-button,.top-actions .account-button{height:36px}
   .top-actions .location-button{width:34px;padding:0;justify-content:center}
   .top-actions .sell-button{padding:0 6px;font-size:12px}
   .top-actions .account-button{width:36px}
@@ -299,7 +318,8 @@ age-heading{flex:1;min-width:0;margin:0}
 .stadium-stage-360 circle{fill:#38204a;stroke:#fff;stroke-width:3}
 .stadium-stage-360 text{fill:#fff;font:800 10px Arial,sans-serif;letter-spacing:.5px}
 .unifi-stage path,.stadium-stage path{fill:#38204a}
-.text-back.back-icon-button{display:grid;place-items:center;width:46px;height:46px;margin:0 0 14px;padding:0;border:1px solid #e3dce9;border-radius:50%;background:#fff;color:#38204a;box-shadow:0 4px 13px rgba(56,32,74,.12);transition:transform .16s,background .16s,box-shadow .16s}
+.text-back.back-icon-button{display:grid;place-items:center;width:46px;height:46px;margin:0 0 14px;padding:0;bor
+der:1px solid #e3dce9;border-radius:50%;background:#fff;color:#38204a;box-shadow:0 4px 13px rgba(56,32,74,.12);transition:transform .16s,background .16s,box-shadow .16s}
 .text-back.back-icon-button:hover{background:#f6f0fb;box-shadow:0 6px 16px rgba(56,32,74,.18);transform:none}
 .text-back.back-icon-button:focus-visible{outline:3px solid rgba(129,80,189,.35);outline-offset:3px}
 .back-icon-button svg{display:block;width:23px;height:23px;overflow:visible}
@@ -315,8 +335,7 @@ age-heading{flex:1;min-width:0;margin:0}
 .admin-page .page-heading p{max-width:720px;color:var(--muted);font-size:15px;line-height:1.6;margin:0}
 .admin-demo-warning{display:flex;align-items:flex-start;gap:13px;margin:0 0 18px;padding:16px 18px;border:1px solid #ead7a6;border-radius:8px;background:#fff8e8;color:#55451f;font-size:13px;line-height:1.55}
 .admin-demo-warning strong{flex:none;color:#8b6413}
-.admin-lookup-card,.admin-order-card,.admin-empty,.admin-integration-note{margin-bottom:18px;padding:23px;background:#fff;
-border:1px solid #e3e4e8;border-radius:8px;box-shadow:0 2px 7px rgba(25,30,44,.035)}
+.admin-lookup-card,.admin-order-card,.admin-empty,.admin-integration-note{margin-bottom:18px;padding:23px;background:#fff;border:1px solid #e3e4e8;border-radius:8px;box-shadow:0 2px 7px rgba(25,30,44,.035)}
 .admin-lookup-card form>label{display:block;margin-bottom:9px;font-size:13px;font-weight:800}
 .admin-lookup-card .lookup-row{max-width:700px}
 .admin-lookup-card .lookup-row input{min-height:48px;font-size:15px}
@@ -357,7 +376,8 @@ border:1px solid #e3e4e8;border-radius:8px;box-shadow:0 2px 7px rgba(25,30,44,.0
   .admin-facts{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
   .admin-order-heading h2{font-size:19px}
 }
-.map-card-expanded .map-help{width:46px;height:46px;padding:0;font-size:34px;line-height:1;font-weight:800;border-radius:50%}
+.map-card-expanded .map-help{width:46px;height:46px;padding:0;font-size:
+34px;line-height:1;font-weight:800;border-radius:50%}
 .page-heading-layout .back-icon-button{position:relative;top:7px}
 .top-actions .search-box{border:0!important;background:transparent!important;box-shadow:none!important}
 .top-actions .search-box:focus-within{background:#f5f1f8!important}
@@ -383,8 +403,7 @@ border:1px solid #e3e4e8;border-radius:8px;box-shadow:0 2px 7px rgba(25,30,44,.0
 .admin-page .page-heading{margin:0}
 .admin-page .page-heading-layout .back-icon-button{top:28px}
 .market-heading-main{display:grid;flex:1;grid-template-columns:minmax(180px,220px) minmax(110px,max-content) minmax(0,1fr);gap:16px;align-items:center}
-.concert-selector{flex:init
-ial}
+.concert-selector{flex:initial}
 .concert-date{display:flex;min-height:42px;flex-direction:column;justify-content:center;gap:5px;padding-left:15px;border-left:1px solid #e4dfea;white-space:nowrap}
 .concert-date>span{color:#81788a;font-size:9px;font-weight:800;letter-spacing:1.2px}
 .concert-date>strong{color:#302638;font-size:13px}
