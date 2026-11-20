@@ -500,3 +500,10 @@ body.map-open{overflow:hidden}
 .history-button{min-height:42px;padding:8px 0;border:0;border-radius:0;background:transparent;color:#513363;font-weight:700}
 .history-button:hover{color:#392248;text-decoration:underline}
 @media(max-width:760px){.booking-footer-actions{margin-top:17px}.browse-text-button{font-size:13px}.history-button{min-height:40px;padding:0 18px}}
+
+/* Live inventory count for the selected ticket area */
+.listings-toolbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:15px;flex:none}
+.area-stock-status{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #e6dced;border-radius:8px;background:#f8f4fb;color:#554365;white-space:nowrap}
+.area-stock-status span{font-size:11px;font-weight:700}
+.area-stock-status strong{min-width:24px;color:#38204a;font-size:21px;line-height:1;text-align:center;font-variant-numeric:tabular-nums}
+@media(max-width:760px){.listings-toolbar-actions{align-items:flex-end;gap:7px}.area-stock-status{gap:7px;padding:7px 9px}.area-stock-status span{font-size:10px}.area-stock-status strong{font-size:18px}}
