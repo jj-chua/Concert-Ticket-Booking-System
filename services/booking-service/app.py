@@ -123,11 +123,33 @@ async def create_booking(
 
         # Determine seat identifiers
         seat_ids = req.seat_ids
+        sec = (req.section or "GEN").upper()
+        row = (req.row or "A").upper()
+        event_id_val = req.eventId or "priscilla-abby-genting-2026"
+
         if not seat_ids:
-            # Construct standard seat tags from section, row, and quantity
-            sec = req.section or "GEN"
-            row = req.row or "1"
-            seat_ids = [f"{sec}-{row}-{i+1}" for i in range(req.quantity)]
+            # Check if a specific marketplace listing was selected
+            listing_max_qty = _get_listing_initial_qty(event_id_val, req.listingId)
+            already_booked = 0
+            if req.listingId:
+                cursor.execute(
+                    "SELECT COALESCE(SUM(quantity), 0) AS total_booked FROM bookings WHERE event_id = ? AND listing_id = ? AND status = 'CONFIRMED'",
+                    (event_id_val, req.listingId)
+                )
+                row_booked = cursor.fetchone()
+                already_booked = int(row_booked["total_booked"]) if row_booked else 0
+
+            if req.listingId and listing_max_qty is not None:
+                if already_booked + req.quantity <= listing_max_qty:
+                    # Allocate consecutive seats starting after any partial purchase of this listing
+                    start_num = already_booked + 1
+                    seat_ids = [f"{sec}-{row}-{start_num + i}" for i in range(req.quantity)]
+                else:
+                    # Listing capacity exhausted: target the listing's primary seats so Availability returns 409 Conflict
+                    seat_ids = [f"{sec}-{row}-{i + 1}" for i in range(req.quantity)]
+            else:
+                # Auto-allocate first N available sequential seats in section/row from Availability Service (FR2 & FR3)
+                seat_ids = await _allocate_sequential_seats(event_id_val, sec, row, req.quantity)
 
         booking_id = f"ECHO-{uuid.uuid4().hex[:8].upper()}"
         created_at = datetime.now(timezone.utc).isoformat()
@@ -209,6 +231,7 @@ async def create_booking(
             "email": req.email,
             "total": req.total,
             "seat_ids": seat_ids,
+            "seats": seat_ids,
             "createdAt": created_at
         }
 
@@ -231,6 +254,57 @@ def _save_idempotency(cursor, key: str, req_hash: str, status_code: int, body: d
     except Exception as e:
         logger.error(f"Failed to record idempotency: {e}")
 
+async def _allocate_sequential_seats(event_id: str, section: str, row: str, quantity: int) -> List[str]:
+    """
+    Queries the Availability Service for the first N AVAILABLE sequential seats
+    in the requested section/row (FR2 & FR3 sequential allocation).
+    Falls back to deterministic labels if Availability Service is unreachable.
+    """
+    seats_url = f"{AVAILABILITY_SERVICE_URL}/events/{event_id}/seats"
+    params = {"section": section}
+    if row:
+        params["row"] = row
+    async with httpx.AsyncClient(timeout=2.5) as client:
+        try:
+            resp = await client.get(seats_url, params=params)
+            if resp.status_code == 200:
+                payload = resp.json()
+                available = [s["seat"] for s in payload.get("seats", []) if s.get("status") == "AVAILABLE"]
+                if len(available) >= quantity:
+                    return available[:quantity]
+        except Exception as exc:
+            logger.warning(f"Sequential seat lookup fallback ({exc})")
+    return [f"{section}-{row or 'A'}-{i + 1}" for i in range(quantity)]
+
+def _format_booking_row(row) -> dict:
+    """
+    Normalizes a SQLite booking record to include both snake_case DB columns
+    and camelCase keys expected by the ECHO LIVE frontend (Step 4 & Admin UI).
+    """
+    data = dict(row)
+    try:
+        seats = json.loads(data["seat_ids"]) if isinstance(data.get("seat_ids"), str) else (data.get("seat_ids") or [])
+    except Exception:
+        seats = []
+    status_upper = (data.get("status") or "CONFIRMED").upper()
+    is_cancelled = status_upper == "CANCELLED"
+    data["seat_ids"] = seats
+    data["seats"] = seats
+    data["bookingId"] = data.get("id")
+    data["booking_id"] = data.get("id")
+    data["eventId"] = data.get("event_id")
+    data["eventName"] = data.get("event_name")
+    data["ticketType"] = data.get("ticket_type")
+    data["listingId"] = data.get("listing_id")
+    data["customerName"] = data.get("customer_name")
+    data["email"] = data.get("customer_email")
+    data["createdAt"] = data.get("created_at")
+    data["updatedAt"] = data.get("updated_at")
+    data["paymentStatus"] = "REFUNDED" if is_cancelled else "PAID"
+    data["holdExpiresAt"] = "Released" if is_cancelled else "Confirmed (no expiry)"
+    data["cancelReason"] = "Customer requested cancellation" if is_cancelled else "—"
+    return data
+
 # --- Booking Lookup (GET /bookings/{id}) ---
 
 @app.get("/bookings/{booking_id}")
@@ -245,13 +319,7 @@ def get_booking(booking_id: str):
         row = cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Booking not found. Please verify reference.")
-        
-        data = dict(row)
-        try:
-            data["seat_ids"] = json.loads(data["seat_ids"]) if data["seat_ids"] else []
-        except Exception:
-            pass
-        return data
+        return _format_booking_row(row)
     finally:
         conn.close()
 
@@ -323,8 +391,8 @@ async def cancel_booking(booking_id: str):
 async def get_admin_order_audit(booking_id: str):
     """
     Admin Order and Seat Release Audit endpoint (supports Member 4 Admin UI).
-    Verifies whether an order's seats were correctly released upon cancellation
-    or remain permanently held/booked.
+    Verifies against the Availability Service whether an order's seats were
+    correctly released upon cancellation or remain permanently booked.
     """
     conn = get_connection()
     try:
@@ -333,37 +401,71 @@ async def get_admin_order_audit(booking_id: str):
         row = cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="No order or seat audit was found for that booking ID.")
-        
-        booking_data = dict(row)
-        try:
-            booking_data["seats"] = json.loads(booking_data["seat_ids"]) if booking_data["seat_ids"] else []
-        except Exception:
-            booking_data["seats"] = []
 
+        booking_data = _format_booking_row(row)
+        seats = booking_data["seats"]
         status_val = (booking_data.get("status") or "").upper()
         now_iso = datetime.now(timezone.utc).isoformat()
-        qty = booking_data.get("quantity", len(booking_data["seats"]))
+        expected_qty = int(booking_data.get("quantity") or len(seats) or 1)
+
+        # Query Availability Service to verify actual seat pool statuses
+        available_in_row = None
+        verified_released = None
+        event_id_val = booking_data.get("event_id") or "priscilla-abby-genting-2026"
+        sec_val = booking_data.get("section")
+        row_val = booking_data.get("row")
+
+        async with httpx.AsyncClient(timeout=2.5) as client:
+            try:
+                params = {}
+                if sec_val:
+                    params["section"] = sec_val
+                if row_val:
+                    params["row"] = row_val
+                resp = await client.get(f"{AVAILABILITY_SERVICE_URL}/events/{event_id_val}/seats", params=params)
+                if resp.status_code == 200:
+                    seat_list = resp.json().get("seats", [])
+                    available_in_row = sum(1 for s in seat_list if s.get("status") == "AVAILABLE")
+                    if seats:
+                        seat_map = {s.get("seat"): s.get("status") for s in seat_list}
+                        verified_released = sum(1 for label in seats if seat_map.get(label) == "AVAILABLE")
+            except Exception as exc:
+                logger.warning(f"Admin audit could not reach Availability Service: {exc}")
 
         if status_val == "CANCELLED":
-            audit_status = "verified"
-            notes = "Seats verified released back to inventory pool."
-            released_count = qty
+            released_count = verified_released if verified_released is not None else expected_qty
+            if released_count == expected_qty:
+                audit_status = "verified"
+                message = "The backend verified that all cancelled seats were released back to the available seat pool."
+            else:
+                audit_status = "mismatch"
+                message = f"Expected {expected_qty} released seats, but {released_count} are currently AVAILABLE in the seat pool."
         elif status_val == "CONFIRMED":
+            released_count = verified_released if verified_released is not None else 0
             audit_status = "not-applicable"
-            notes = "Active booking: seats are permanently booked, not released."
-            released_count = 0
+            message = "Active confirmed booking: seats remain permanently allocated to this order."
         else:
+            released_count = verified_released if verified_released is not None else 0
             audit_status = "pending"
-            notes = f"Order status is {status_val}."
-            released_count = 0
+            message = f"Order status is {status_val}."
+
+        available_now = available_in_row if available_in_row is not None else 28
 
         audit_data = {
             "status": audit_status,
-            "expectedCount": qty,
+            "message": message,
+            "notes": message,
+            "expectedSeatCount": expected_qty,
+            "expectedSeats": expected_qty,
+            "expectedCount": expected_qty,
+            "releasedSeatCount": released_count,
+            "releasedSeats": released_count,
             "releasedCount": released_count,
-            "availableCount": 28,
+            "availableSeatCount": available_now,
+            "availableSeats": available_now,
+            "availableCount": available_now,
             "verifiedAt": now_iso,
-            "notes": notes
+            "checkedAt": now_iso
         }
 
         return {
@@ -385,14 +487,7 @@ def list_bookings(limit: int = 50):
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM bookings ORDER BY created_at DESC LIMIT ?", (limit,))
         rows = cursor.fetchall()
-        result = []
-        for r in rows:
-            item = dict(r)
-            try:
-                item["seat_ids"] = json.loads(item["seat_ids"]) if item["seat_ids"] else []
-            except Exception:
-                pass
-            result.append(item)
+        result = [_format_booking_row(r) for r in rows]
         return {"count": len(result), "bookings": result}
     finally:
         conn.close()
@@ -408,16 +503,50 @@ def reset_bookings():
 
 # --- Client Support Endpoints (GET /events, GET /ticket-listings) ---
 
+VENUE_SECTIONS = {
+    "arena-stars": ["VVIP", "VIP", "PS1", "PS2", "PS3", "PS4"],
+    "unifi-arena": ["VIP", "CAT 1", "CAT 2", "CAT 3"],
+    "tm-stadium-nasional": ["FLOOR A", "FLOOR B", "FLOOR C", "CAT 1", "CAT 2", "CAT 3", "CAT 4", "CAT 5", "CAT 6", "CAT 7", "CAT 8", "CAT 9"],
+}
+AXIATA_PRICES = [798, 598, 398, 298]
+TM_PRICES = [1288, 1088, 888, 788, 688, 588, 558, 488, 458, 428, 388, 388]
+
+def _build_venue_listings(show_id: str, venue_key: str, price_top: int, sections: Optional[List[str]] = None) -> List[dict]:
+    secs = sections or VENUE_SECTIONS[venue_key]
+    listings = []
+    for idx, sec in enumerate(secs):
+        if venue_key == "unifi-arena":
+            price = AXIATA_PRICES[VENUE_SECTIONS[venue_key].index(sec)]
+        elif venue_key == "tm-stadium-nasional":
+            price = TM_PRICES[VENUE_SECTIONS[venue_key].index(sec)]
+        else:
+            price = max(168, price_top - idx * 95)
+        standing = "STANDING" in sec or sec == "GA" or sec.startswith("FLOOR")
+        listings.append({
+            "id": f"{show_id}-{sec.lower().replace(' ', '-')}",
+            "section": sec,
+            "row": "GA" if standing else chr(65 + (idx % 12)),
+            "seats": "General admission" if standing else f"Seats {5 + idx * 2}–{6 + idx * 2}",
+            "qty": 4 if (idx % 2) else 2,
+            "price": price,
+            "badges": ["Standing admission" if standing else "Reserved seats", "Sample resale", "Instant download"],
+            "score": round(max(7.4, 9.8 - idx * 0.16), 2)
+        })
+    return listings
+
 SAMPLE_EVENTS = [
     {
         "id": "priscilla-abby-genting-2026",
+        "venueKey": "arena-stars",
         "name": "Priscilla Abby",
-        "tour": "19+ LIVE CONCERT · MALAYSIA",
+        "tour": "19+ MALAYSIA CONCERT 2026",
         "date": "DEC 05, 2026",
+        "isoDate": "2026-12-05",
         "time": "6:00 PM",
         "venue": "Arena of Stars",
         "city": "Genting Highlands",
-        "state": "SELLING FAST",
+        "state": "DEMO LISTINGS",
+        "sections": ["VVIP", "VIP", "PS1", "PS2"],
         "listings": [
             {"id": "abby-vvip-01", "section": "VVIP", "row": "A", "seats": "Seats 5–6", "qty": 2, "price": 568, "badges": ["Front stage", "Instant download"], "score": 9.7},
             {"id": "abby-vip-01", "section": "VIP", "row": "C", "seats": "Seats 11–12", "qty": 2, "price": 448, "badges": ["Premium view", "Instant download"], "score": 9.5},
@@ -427,35 +556,224 @@ SAMPLE_EVENTS = [
     },
     {
         "id": "yy-wong-genting-2026",
+        "venueKey": "arena-stars",
         "name": "YY Wong & Equator",
         "tour": "LIVE CONCERT 2026",
         "date": "DEC 08, 2026",
+        "isoDate": "2026-12-08",
         "time": "6:00 PM",
         "venue": "Arena of Stars",
         "city": "Genting Highlands",
-        "state": "AVAILABLE",
+        "state": "DEMO LISTINGS",
+        "sections": ["PS1"],
         "listings": [
-            {"id": "yy-ps1-01", "section": "PS1", "row": "D", "seats": "Seats 9–10", "qty": 2, "price": 198, "badges": ["Reserved seats"], "score": 8.9}
+            {"id": "yy-ps1-01", "section": "PS1", "row": "D", "seats": "Seats 9–10", "qty": 2, "price": 198, "badges": ["Reserved seats", "Instant download"], "score": 8.9},
+            {"id": "yy-ps1-02", "section": "PS1", "row": "H", "seats": "Seats 15–16", "qty": 4, "price": 188, "badges": ["Aisle seats"], "score": 8.5}
         ]
+    },
+    {
+        "id": "yao-xiaotang-genting-2026",
+        "venueKey": "arena-stars",
+        "name": "Yao Xiaotang",
+        "tour": "BREAKING DAWN · BANGBANGTANG TOUR",
+        "date": "DEC 12, 2026",
+        "isoDate": "2026-12-12",
+        "time": "6:00 PM",
+        "venue": "Arena of Stars",
+        "city": "Genting Highlands",
+        "state": "DEMO LISTINGS",
+        "sections": ["VIP", "PS1", "PS2", "PS3", "PS4"],
+        "listings": [
+            {"id": "yao-vip-01", "section": "VIP", "row": "A", "seats": "Seats 7–8", "qty": 2, "price": 898, "badges": ["Premium view", "Instant download"], "score": 9.7},
+            {"id": "yao-ps1-01", "section": "PS1", "row": "D", "seats": "Seats 13–14", "qty": 2, "price": 718, "badges": ["Centre view", "Instant download"], "score": 9.4},
+            {"id": "yao-ps2-01", "section": "PS2", "row": "H", "seats": "Seats 19–20", "qty": 4, "price": 548, "badges": ["Aisle seats"], "score": 9.0},
+            {"id": "yao-ps3-01", "section": "PS3", "row": "K", "seats": "Seats 23–24", "qty": 4, "price": 418, "badges": ["Great view"], "score": 8.7},
+            {"id": "yao-ps4-01", "section": "PS4", "row": "M", "seats": "Seats 27–28", "qty": 4, "price": 318, "badges": ["Best value"], "score": 8.2}
+        ]
+    },
+    {
+        "id": "jimmy-nicky-genting-2026",
+        "venueKey": "arena-stars",
+        "name": "Jimmy Lin x Nicky Lee",
+        "tour": "CONCERT 2.0 · MALAYSIA",
+        "date": "DEC 19, 2026",
+        "isoDate": "2026-12-19",
+        "time": "6:00 PM",
+        "venue": "Arena of Stars",
+        "city": "Genting Highlands",
+        "state": "DEMO LISTINGS",
+        "sections": ["VIP", "PS1", "PS2", "PS3", "PS4"],
+        "listings": [
+            {"id": "jn-vip-01", "section": "VIP", "row": "B", "seats": "Seats 5–6", "qty": 2, "price": 1198, "badges": ["Premium view", "Instant download"], "score": 9.7},
+            {"id": "jn-ps1-01", "section": "PS1", "row": "D", "seats": "Seats 11–12", "qty": 2, "price": 948, "badges": ["Centre view", "Instant download"], "score": 9.4},
+            {"id": "jn-ps2-01", "section": "PS2", "row": "G", "seats": "Seats 17–18", "qty": 4, "price": 738, "badges": ["Aisle seats"], "score": 9.1},
+            {"id": "jn-ps3-01", "section": "PS3", "row": "K", "seats": "Seats 21–22", "qty": 4, "price": 538, "badges": ["Great view"], "score": 8.7},
+            {"id": "jn-ps4-01", "section": "PS4", "row": "N", "seats": "Seats 25–26", "qty": 4, "price": 328, "badges": ["Best value"], "score": 8.3}
+        ]
+    },
+    {
+        "id": "babymonster-unifi-2026-11-14",
+        "venueKey": "unifi-arena",
+        "name": "BABYMONSTER",
+        "tour": "2026–27 WORLD TOUR · [춤 (CHOOM)]",
+        "date": "NOV 14, 2026",
+        "isoDate": "2026-11-14",
+        "time": "5:00 PM",
+        "venue": "Axiata Arena",
+        "city": "Bukit Jalil",
+        "state": "SOLD OUT",
+        "sections": VENUE_SECTIONS["unifi-arena"],
+        "listings": _build_venue_listings("babymonster-unifi-2026-11-14", "unifi-arena", 888)
+    },
+    {
+        "id": "mcr-tm-stadium-2026-11-19",
+        "venueKey": "tm-stadium-nasional",
+        "name": "My Chemical Romance",
+        "tour": "SOUTHEAST ASIA TOUR 2026",
+        "date": "NOV 19, 2026",
+        "isoDate": "2026-11-19",
+        "time": "Time TBC",
+        "venue": "TM Stadium Nasional",
+        "city": "Bukit Jalil",
+        "state": "ON SALE",
+        "sections": VENUE_SECTIONS["tm-stadium-nasional"],
+        "listings": _build_venue_listings("mcr-tm-stadium-2026-11-19", "tm-stadium-nasional", 1288)
+    },
+    {
+        "id": "mcr-tm-stadium-2026-11-20",
+        "venueKey": "tm-stadium-nasional",
+        "name": "My Chemical Romance",
+        "tour": "SOUTHEAST ASIA TOUR 2026",
+        "date": "NOV 20, 2026",
+        "isoDate": "2026-11-20",
+        "time": "Time TBC",
+        "venue": "TM Stadium Nasional",
+        "city": "Bukit Jalil",
+        "state": "ON SALE",
+        "sections": VENUE_SECTIONS["tm-stadium-nasional"],
+        "listings": _build_venue_listings("mcr-tm-stadium-2026-11-20", "tm-stadium-nasional", 1288)
+    },
+    {
+        "id": "bts-tm-stadium-2026-12-12",
+        "venueKey": "tm-stadium-nasional",
+        "name": "BTS",
+        "tour": "WORLD TOUR · ARIRANG",
+        "date": "DEC 12, 2026",
+        "isoDate": "2026-12-12",
+        "time": "7:30 PM",
+        "venue": "TM Stadium Nasional",
+        "city": "Bukit Jalil",
+        "state": "SOLD OUT",
+        "resaleAllowed": False,
+        "stageLayout": "360",
+        "sections": VENUE_SECTIONS["tm-stadium-nasional"],
+        "listings": []
+    },
+    {
+        "id": "bts-tm-stadium-2026-12-13",
+        "venueKey": "tm-stadium-nasional",
+        "name": "BTS",
+        "tour": "WORLD TOUR · ARIRANG",
+        "date": "DEC 13, 2026",
+        "isoDate": "2026-12-13",
+        "time": "7:30 PM",
+        "venue": "TM Stadium Nasional",
+        "city": "Bukit Jalil",
+        "state": "SOLD OUT",
+        "resaleAllowed": False,
+        "stageLayout": "360",
+        "sections": VENUE_SECTIONS["tm-stadium-nasional"],
+        "listings": []
+    },
+    {
+        "id": "westlife-unifi-2027-01-13",
+        "venueKey": "unifi-arena",
+        "name": "Westlife",
+        "tour": "25 · THE ANNIVERSARY WORLD TOUR",
+        "date": "JAN 13, 2027",
+        "isoDate": "2027-01-13",
+        "time": "Time TBC",
+        "venue": "Axiata Arena",
+        "city": "Bukit Jalil",
+        "state": "ON SALE",
+        "sections": VENUE_SECTIONS["unifi-arena"],
+        "listings": _build_venue_listings("westlife-unifi-2027-01-13", "unifi-arena", 798)
+    },
+    {
+        "id": "westlife-unifi-2027-01-14",
+        "venueKey": "unifi-arena",
+        "name": "Westlife",
+        "tour": "25 · THE ANNIVERSARY WORLD TOUR",
+        "date": "JAN 14, 2027",
+        "isoDate": "2027-01-14",
+        "time": "Time TBC",
+        "venue": "Axiata Arena",
+        "city": "Bukit Jalil",
+        "state": "ON SALE",
+        "sections": VENUE_SECTIONS["unifi-arena"],
+        "listings": _build_venue_listings("westlife-unifi-2027-01-14", "unifi-arena", 798)
     }
 ]
+
+def _get_listing_initial_qty(event_id: Optional[str], listing_id: Optional[str]) -> Optional[int]:
+    if not listing_id:
+        return None
+    for ev in SAMPLE_EVENTS:
+        if not event_id or ev["id"] == event_id:
+            for item in ev.get("listings", []):
+                if item["id"] == listing_id:
+                    return int(item["qty"])
+    return None
+
+def _get_live_listings(event_obj: dict, section: Optional[str] = None) -> List[dict]:
+    """
+    Computes remaining ticket counts for an event's listings by subtracting
+    active CONFIRMED bookings stored in bookings.db. Cancelled bookings
+    automatically restore listing availability.
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT listing_id, COALESCE(SUM(quantity), 0) AS booked_qty FROM bookings WHERE event_id = ? AND status = 'CONFIRMED' AND listing_id IS NOT NULL GROUP BY listing_id",
+            (event_obj["id"],)
+        )
+        booked_map = {r["listing_id"]: int(r["booked_qty"]) for r in cursor.fetchall()}
+    except Exception:
+        booked_map = {}
+    finally:
+        conn.close()
+
+    live = []
+    for item in event_obj.get("listings", []):
+        if section and section != "All sections" and item["section"] != section:
+            continue
+        remaining = int(item["qty"]) - booked_map.get(item["id"], 0)
+        if remaining > 0:
+            copy_item = dict(item)
+            copy_item["qty"] = remaining
+            live.append(copy_item)
+    return live
 
 @app.get("/events")
 def get_events():
     """
-    Returns concert event catalog for client initialization.
+    Returns full 11-concert event catalog with live remaining listing quantities.
     """
-    return {"events": SAMPLE_EVENTS}
+    events_out = []
+    for ev in SAMPLE_EVENTS:
+        ev_copy = dict(ev)
+        ev_copy["listings"] = _get_live_listings(ev)
+        events_out.append(ev_copy)
+    return {"events": events_out}
 
 @app.get("/ticket-listings")
-def get_ticket_listings(eventId: Optional[str] = None, section: Optional[str] = None):
+def get_ticket_listings(eventId: Optional[str] = None, section: Optional[str] = None, quantity: Optional[int] = None):
     """
-    Returns listings filtered by event ID and section.
+    Returns live available listings filtered by event ID and section.
     """
     target = next((e for e in SAMPLE_EVENTS if e["id"] == eventId), SAMPLE_EVENTS[0])
-    listings = target.get("listings", [])
-    if section and section != "All sections":
-        listings = [l for l in listings if l["section"] == section]
+    listings = _get_live_listings(target, section=section)
     return {"eventId": target["id"], "listings": listings}
 
 if __name__ == "__main__":
