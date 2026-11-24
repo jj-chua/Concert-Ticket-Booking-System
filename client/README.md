@@ -16,3 +16,7 @@ This repository does not include a backend, payment processing, shared inventory
 
 In demo mode, Admin searches local browser bookings and marks the seat pool as unverified. The audit API should return `booking` and `seatReleaseAudit` fields, including audit status (`verified`, `mismatch`, or `pending`), expected and released seat counts, current available count, and verification time. The UI never treats a cancelled status alone as proof that seats were released.
 
+## Purchase date and time
+
+New demo bookings save a purchase timestamp. The confirmation receipt, booking details, member ticket history, the owner’s sell-ticket details, and Admin order lookup display the purchase date and time in Malaysia Time (MYT). For live bookings, the API should return a server-generated timestamp such as `createdAt` or `created_at`; older records without a timestamp display “Not recorded.”
+
