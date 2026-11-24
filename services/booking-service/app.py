@@ -53,12 +53,15 @@ class BookingCreateRequest(BaseModel):
     date: Optional[str] = Field(None, examples=["DEC 05, 2026"])
     time: Optional[str] = Field(None, examples=["6:00 PM"])
     section: Optional[str] = Field(None, examples=["VVIP"])
+    zoneLabel: Optional[str] = Field(None, examples=["VVIP Block A"])
     row: Optional[str] = Field(None, examples=["A"])
     ticketType: Optional[str] = Field(None, examples=["Front stage, Instant download"])
     listingId: Optional[str] = Field(None, examples=["abby-vvip-01"])
+    ticketUnitPrice: Optional[float] = Field(None, examples=[568.0])
     quantity: int = Field(1, ge=1, le=10, examples=[2])
     customerName: Optional[str] = Field("Concert Guest", examples=["JJ Chua"])
-    email: str = Field(..., examples=["user@example.com"])
+    email: Optional[str] = Field("guest@echolive.my", examples=["user@example.com"])
+    paymentMethod: Optional[str] = Field(None, examples=["Touch and Go"])
     total: float = Field(0.0, examples=[1136.0])
     seat_ids: Optional[List[str]] = Field(None, examples=[["VVIP-A-5", "VVIP-A-6"]])
     userId: Optional[str] = Field(None, examples=["user-123"])
@@ -212,6 +215,7 @@ async def create_booking(
         )
 
         # Step 5: Formulate Success Receipt & Save in Idempotency Cache
+        unit_price = req.ticketUnitPrice if req.ticketUnitPrice is not None else (round(req.total / max(1, req.quantity), 2) if req.total else 0.0)
         result_payload = {
             "id": booking_id,
             "bookingId": booking_id,
@@ -223,16 +227,21 @@ async def create_booking(
             "date": req.date,
             "time": req.time,
             "section": req.section,
+            "zoneLabel": req.zoneLabel,
             "row": req.row,
             "ticketType": req.ticketType,
             "listingId": req.listingId,
+            "ticketUnitPrice": unit_price,
+            "originalTicketPrice": unit_price,
             "quantity": req.quantity,
-            "customerName": req.customerName,
-            "email": req.email,
+            "customerName": req.customerName or "Echo Live Member",
+            "email": req.email or "guest@echolive.my",
+            "paymentMethod": req.paymentMethod,
             "total": req.total,
             "seat_ids": seat_ids,
             "seats": seat_ids,
-            "createdAt": created_at
+            "createdAt": created_at,
+            "purchasedAt": created_at
         }
 
         _save_idempotency(cursor, idempotency_key, request_hash, 201, result_payload)
@@ -288,6 +297,9 @@ def _format_booking_row(row) -> dict:
         seats = []
     status_upper = (data.get("status") or "CONFIRMED").upper()
     is_cancelled = status_upper == "CANCELLED"
+    qty = max(1, int(data.get("quantity") or 1))
+    total_val = float(data.get("total") or 0.0)
+    unit_price = round(total_val / qty, 2) if total_val > 0 else 0.0
     data["seat_ids"] = seats
     data["seats"] = seats
     data["bookingId"] = data.get("id")
@@ -296,9 +308,12 @@ def _format_booking_row(row) -> dict:
     data["eventName"] = data.get("event_name")
     data["ticketType"] = data.get("ticket_type")
     data["listingId"] = data.get("listing_id")
+    data["ticketUnitPrice"] = unit_price
+    data["originalTicketPrice"] = unit_price
     data["customerName"] = data.get("customer_name")
     data["email"] = data.get("customer_email")
     data["createdAt"] = data.get("created_at")
+    data["purchasedAt"] = data.get("created_at")
     data["updatedAt"] = data.get("updated_at")
     data["paymentStatus"] = "REFUNDED" if is_cancelled else "PAID"
     data["holdExpiresAt"] = "Released" if is_cancelled else "Confirmed (no expiry)"
